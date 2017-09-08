@@ -21,6 +21,7 @@ opt = add_args([
 ['-b', 128, 'batch_size'],
 ['--augment', False, 'data augmentation'],
 ['-B', 5, 'max epochs'],
+['-l', False, 'log'],
 ])
 
 setup(opt)
@@ -64,8 +65,8 @@ def helper(f):
             x,y = Variable(x.cuda()), Variable(y.cuda())
             model.zero_grad()
             yh = model(x)
-            f = criterion(model(x), y) + opt['l2']/2.*fw.norm()**2
-            f.backward()
+            _f = criterion(model(x), y) + opt['l2']/2.*fw.norm()**2
+            _f.backward()
             grad.add_(fdw)
 
         grad.div_(opt['nb'])
@@ -84,8 +85,8 @@ def helper(f):
 
             model.zero_grad()
             yh = model(x)
-            f = criterion(model(x), y) + opt['l2']/2.*fw.norm()**2
-            f.backward()
+            _f = criterion(model(x), y) + opt['l2']/2.*fw.norm()**2
+            _f.backward()
 
             tmp = fdw.clone().add_(-1, fgrad)
             S.add_(th.ger(tmp, tmp))
@@ -112,14 +113,15 @@ def helper(f):
     rank = (sval > eps).sum()
 
     print '[save back ckpt]...'
-    if not 'b' in ckpt:
-        ckpt['b'] = {}
-    if opt['b'] in ckpt['b']:
-        print 'found key: ', opt['b'], ' in ckpt[b], will overwrite'
+    # if not 'b' in ckpt:
+    #     ckpt['b'] = {}
+    # if opt['b'] in ckpt['b']:
+    #     print 'found key: ', opt['b'], ' in ckpt[b], will overwrite'
+    # ckpt['b'][opt['b']] = dict(eig=eig, sval=sval, rank=rank)
 
-    ckpt['b'][opt['b']] = dict(eig=eig, sval=sval, rank=rank)
+    _ckpt = dict(eig=eig, sval=sval, rank=rank)
     print eig[:10], sval[:10], rank
-    th.save(ckpt, f)
+    th.save(_ckpt, f+'.eig.pz')
 
 if '*' in opt['i']:
     print 'Found files: '
