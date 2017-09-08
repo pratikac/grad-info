@@ -76,6 +76,8 @@ def gitrev(opt):
     return rs
 
 def create_logger(opt, idx=0):
+    opt['l'] = opt.get('l', False)
+
     if not opt['l']:
         return
 

@@ -13,7 +13,6 @@ import numpy as np
 import logging
 from pprint import pprint
 import pdb, glob, sys, gc, time, os
-from copy import deepcopy
 
 opt = add_args([
 ['-o', '/home/%s/local2/pratikac/results'%os.environ['USER'], 'output'],
@@ -25,12 +24,6 @@ opt = add_args([
 ['-b', 128, 'batch_size'],
 ['--augment', False, 'data augmentation'],
 ['-B', 5, 'max epochs'],
-['--lr', 0.1, 'lr'],
-['--lrs', '', 'lr schedule'],
-['-L', 10, 'stop points for computing S'],
-['-s', 42, 'seed'],
-['-l', False, 'log'],
-['-v', False, 'verbose']
 ])
 
 setup(opt)
@@ -123,14 +116,14 @@ else:
 # allcnnt (N=12238)
 # cifar10
 # b=128, r=1541
-# b=256, r=_
-# b=512, r=_
+# b=256, r=980
+# b=512, r=490
 # b=1024, r=245
 # b=2048, r=125
 
 # cifar100
 # b=128, r=1458
-# b=256, r=_
-# b=512, r=_
+# b=256, r=980
+# b=512, r=490
 # b=1024, r=245
-# b=2048, r=
+# b=2048, r=125
