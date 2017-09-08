@@ -72,7 +72,7 @@ def helper(f):
         return grad
 
     print '[start computing S]'
-    S = th.FloatTensor(N,N).zero_()
+    S = th.FloatTensor(N,N).zero_().cuda()
     fgrad = full_grad()
 
     i = 0
@@ -87,21 +87,26 @@ def helper(f):
             f = criterion(model(x), y) + opt['l2']/2.*fw.norm()**2
             f.backward()
 
-            tmp = fdw.clone().add_(-1, fgrad).cpu()
+            tmp = fdw.clone().add_(-1, fgrad)
             S.add_(th.ger(tmp, tmp))
             i += 1
 
             if b % 10 == 0:
                 print e, b, timer()-_dt
 
-    S = S.numpy()/float(i)
+    S.div_(i)
+    S = S.cpu().numpy()
 
     print '[finished computing S]... ', timer()-dt
     print '[begin eig]...'
+    dt = timer()
     eig = np.linalg.eigvalsh(S)
+    print '[finished eig]... ', timer()-dt
 
     print '[begin svd]...'
+    dt = timer()
     sval = np.linalg.svd(S, compute_uv=False)
+    print '[finished svd]... ', timer()-dt
 
     eps = np.finfo(np.float32).eps
     rank = (sval > eps).sum()
@@ -113,6 +118,7 @@ def helper(f):
         print 'found key: ', opt['b'], ' in ckpt[b], will overwrite'
 
     ckpt['b'][opt['b']] = dict(eig=eig, sval=sval, rank=rank)
+    print eig[:10], sval[:10], rank
     th.save(ckpt, f)
 
 if '*' in opt['i']:

@@ -174,7 +174,7 @@ class allcnnt(allcnn):
 
 class allcnns(allcnn):
     name = 'allcnns'
-    def __init__(self, opt, c1=16, c2=32):
+    def __init__(self, opt, c1=12, c2=24):
         if (not 'd' in opt) or opt['d'] < 0:
             opt['d'] = 0.0
 
