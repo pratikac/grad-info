@@ -73,7 +73,7 @@ def train():
             print '[%03d][%03d/%03d] %.3f %.3f%% [%.3fs]'%(e, b, opt['nb'], \
                     loss.value()[0], top1.value()[0], timer()-dt)
 
-    r = dict(e=e, f=ff, top1=ftop1, train=True)
+    r = dict(e=e, f=loss.value()[0], top1=top1.value()[0], train=True)
     print '+[%02d] %.3f %.3f%%'%(e, r['f'], r['top1'])
     return r
 
