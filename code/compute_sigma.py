@@ -12,118 +12,107 @@ from timeit import default_timer as timer
 import numpy as np
 import logging
 from pprint import pprint
-import pdb, glob, sys, gc, time, os
+import pdb, glob2, sys, gc, time, os, json
+from copy import deepcopy
 
 opt = add_args([
-['-o', '/home/%s/local2/pratikac/results'%os.environ['USER'], 'output'],
-['-m', 'allcnnt', 'lenet | mnistfc | allcnn | wrn* | resnet*'],
 ['-g', 0, 'gpu'],
-['-i', '', 'model to load'],
-['--check', '', 'check S'],
-['--dataset', 'cifar10', 'mnist | cifar10 | cifar100 | svhn | imagenet'],
+['-i', '', 'location of modules'],
 ['-b', 128, 'batch_size'],
 ['--augment', False, 'data augmentation'],
 ['-B', 5, 'max epochs'],
 ])
 
 setup(opt)
+optc = deepcopy(opt)
 
-model = getattr(models, opt['m'])(opt).cuda()
-if not opt['i'] == '':
-    model.load_state_dict(th.load(opt['i'])['state_dict'])
-criterion = nn.CrossEntropyLoss().cuda()
+def helper(f):
+    print '[Processing] ', f
+    ckpt = th.load(f)
+    _opt = json.loads(ckpt['opt'])
 
-build_filename(opt, blacklist=['i', 's', 'check'])
-pprint(opt)
+    _opt.update(**optc)
+    opt = deepcopy(_opt)
+    pprint(opt)
 
-dataset, augment = getattr(loader, opt['dataset'])(opt)
-loaders = loader.get_loaders(dataset, augment, opt)
-data = loaders[0]['train_full']
+    model = getattr(models, opt['m'])(opt).cuda()
+    model.load_state_dict(ckpt['state_dict'])
+    criterion = nn.CrossEntropyLoss().cuda()
 
-# populate buffers before flattening params
-for bi, (x,y) in enumerate(data):
-    x,y = Variable(x.cuda()), Variable(y.cuda())
-    model.zero_grad()
-    f = criterion(model(x), y)
-    f.backward()
-    break
+    dataset, augment = getattr(loader, opt['dataset'])(opt)
+    loaders = loader.get_loaders(dataset, augment, opt)
+    data = loaders[0]['train_full']
+    opt['nb'] = len(data)
 
-N = models.num_parameters(model)
-fw, fdw = th.FloatTensor(N).cuda(), th.FloatTensor(N).cuda()
-flatten_params(model, fw, fdw)
-
-def full_grad():
-    grad = th.FloatTensor(N).cuda().zero_()
-    loss, top1, top5 = 0, 0, 0
-    n = float(len(data))
-
+    # populate buffers before flattening params
     for bi, (x,y) in enumerate(data):
         x,y = Variable(x.cuda()), Variable(y.cuda())
         model.zero_grad()
-        yh = model(x)
-        f = criterion(model(x), y) + opt['l2']/2.*fw.norm()**2
+        f = criterion(model(x), y)
         f.backward()
+        break
 
-        err, err5 = clerr(yh.data, y.data, topk=(1,5))
+    N = models.num_parameters(model)
+    fw, fdw = th.FloatTensor(N).cuda(), th.FloatTensor(N).cuda()
+    flatten_params(model, fw, fdw)
+    model.train()
 
-        loss += f.data[0]
-        grad.add_(fdw)
-        top1 += err
-        top5 += err5
+    def full_grad():
+        grad = th.FloatTensor(N).cuda().zero_()
 
-    loss /= n
-    grad /= n
-    top1 /= n
-    top5 /= n
-    return loss, grad, top1, top5
+        for bi, (x,y) in enumerate(data):
+            x,y = Variable(x.cuda()), Variable(y.cuda())
+            model.zero_grad()
+            yh = model(x)
+            f = criterion(model(x), y) + opt['l2']/2.*fw.norm()**2
+            f.backward()
+            grad.add_(fdw)
 
-fn = opt['check']
-if not os.path.isfile(fn):
-    S = th.FloatTensor(N, N).zero_()
-    ff, fgrad, _, _ = full_grad()
+        grad.div_(opt['nb'])
+        return grad
 
-    nb = len(data)
+    print '[start computing S]'
+    S = th.FloatTensor(N,N).zero_()
+    fgrad = full_grad()
+
     i = 0
-    try:
-        for e in xrange(opt['B']):
-            for b, (x,y) in enumerate(data):
-                x,y = Variable(x.cuda()), Variable(y.cuda())
+    dt = timer()
+    for e in xrange(opt['B']):
+        for b, (x,y) in enumerate(data):
+            _dt = timer()
+            x,y = Variable(x.cuda()), Variable(y.cuda())
 
-                model.zero_grad()
-                yh = model(x)
-                f = criterion(model(x), y) + opt['l2']/2.*fw.norm()**2
-                f.backward()
+            model.zero_grad()
+            yh = model(x)
+            f = criterion(model(x), y) + opt['l2']/2.*fw.norm()**2
+            f.backward()
 
-                tmp = fdw.clone().add_(-1, fgrad)
-                S.add_(th.ger(tmp, tmp).cpu())
-                i += 1
+            tmp = fdw.clone().add_(-1, fgrad).cpu()
+            S.add_(th.ger(tmp, tmp))
+            i += 1
 
-                if b % 100 == 0:
-                    print e, b
+            if b % 10 == 0:
+                print e, b, timer()-_dt
 
-    except KeyboardInterrupt:
-        print 'exiting early...'
+    S = S.numpy()/float(i)
 
-    S.div_(i)
-    th.save(dict(S=S, fgrad=fgrad), opt['filename']+'.pz')
+    print '[finished computing S]... ', timer()-dt
+    print '[begin eig]...'
+    eig = np.linalg.eigvalsh(S)
 
+    print '[begin svd]...'
+    sval = np.linalg.svd(S, compute_uv=False)
+
+    eps = np.finfo(np.float32).eps
+    rank = (sval > eps).sum()
+
+    print '[save back ckpt]...'
+    _ckpt = dict(S=S, eig=eig, sval=sval, rank=rank, fgrad=fgrad.cpu().numpy())
+    ckpt.update(**_ckpt)
+    th.save(ckpt, f)
+
+if '*' in opt['i']:
+    for f in sorted(glob2.glob(opt['i'] + '/*.pz')):
+        helper(f)
 else:
-    print 'Found %s'%fn
-    S = th.load(fn)['S'].numpy()
-    print np.linalg.matrix_rank(S)
-
-
-# allcnnt (N=12238)
-# cifar10
-# b=128, r=1541
-# b=256, r=980
-# b=512, r=490
-# b=1024, r=245
-# b=2048, r=125
-
-# cifar100
-# b=128, r=1458
-# b=256, r=980
-# b=512, r=490
-# b=1024, r=245
-# b=2048, r=125
+    helper(opt['i'])

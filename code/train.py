@@ -37,7 +37,7 @@ setup(opt)
 model = getattr(models, opt['m'])(opt).cuda()
 criterion = nn.CrossEntropyLoss().cuda()
 
-build_filename(opt, blacklist=['i', 's', 'check', 'L'])
+build_filename(opt, blacklist=['i', 'check', 'L'])
 pprint(opt)
 
 dataset, augment = getattr(loader, opt['dataset'])(opt)
@@ -109,7 +109,7 @@ def save_ckpt(e, stats):
     if not os.path.isdir(dirloc):
         os.makedirs(dirloc)
 
-    fn = '%s_%d.pz'%(opt['m'], e)
+    fn = '%s_%02d.pz'%(opt['m'], e)
     r = gitrev(opt)
     meta = dict(SHA=r[0], STATUS=r[1], DIFF=r[2])
     th.save(dict(
