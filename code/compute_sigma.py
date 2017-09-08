@@ -109,10 +109,19 @@ def helper(f):
     print '[save back ckpt]...'
     if not 'b' in ckpt:
         ckpt['b'] = {}
+    if opt['b'] in ckpt['b']:
+        print 'found key: ', opt['b'], ' in ckpt[b], will overwrite'
+
     ckpt['b'][opt['b']] = dict(eig=eig, sval=sval, rank=rank)
     th.save(ckpt, f)
 
 if '*' in opt['i']:
+    print 'Found files: '
+    for f in sorted(glob2.glob(opt['i'] + '/*.pz')):
+        print f
+
+    print 'continue?'
+    raw_input()
     for f in sorted(glob2.glob(opt['i'] + '/*.pz')):
         helper(f)
 else:
