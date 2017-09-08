@@ -39,7 +39,7 @@ def add_args(args):
 
 def build_filename(opt, blacklist=[], marker=''):
     l = [   'lrs', 'gpus', 'depth', 'widen', \
-            'f','v', 'augment', 't', 'nw', 'save_all', 'd', \
+            'f','v', 'augment', 't', 'nw', 'save_all', \
             'save','e','l2','lr', \
             'l','h','o','B','g','r']
     blacklist = blacklist + l

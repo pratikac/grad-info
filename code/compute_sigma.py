@@ -120,8 +120,8 @@ def helper(f):
         print 'found key: ', opt['b'], ' in ckpt[b], will overwrite'
     ckpt['b'][opt['b']] = dict(eig=eig, sval=sval, rank=rank)
 
-    # _ckpt = dict(eig=eig, sval=sval, rank=rank)
-    # th.save(_ckpt, f+'.eig.pz')
+    _ckpt = dict(eig=eig, sval=sval, rank=rank)
+    th.save(_ckpt, f+'.eig.pz')
     th.save(ckpt, f)
 
 if '*' in opt['i']:
