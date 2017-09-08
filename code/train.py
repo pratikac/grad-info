@@ -36,17 +36,18 @@ setup(opt)
 model = getattr(models, opt['m'])(opt).cuda()
 criterion = nn.CrossEntropyLoss().cuda()
 
-build_filename(opt, blacklist=['i', 's', 'check'])
+build_filename(opt, blacklist=['i', 's', 'check', 'L'])
 pprint(opt)
 
 dataset, augment = getattr(loader, opt['dataset'])(opt)
 loaders = loader.get_loaders(dataset, augment, opt)
 train_data, val_data = loaders[0]['train_full'], loaders[0]['val']
 
-optimizer = th.optim.SGD(model.parameters(), lr=opt['lr'], momentum=0.9)
+optimizer = th.optim.SGD(model.parameters(), lr=opt['lr'],
+            momentum=0.9, weight_decay=opt['l2'])
 
-def train():
-    opt['lr'] = lrschedule(opt, e, logger)
+def train(e):
+    opt['lr'] = lrschedule(opt, e)
     for p in optimizer.param_groups:
         p['lr'] = opt['lr']
 
@@ -54,14 +55,14 @@ def train():
     loss = tnt.meter.AverageValueMeter()
     top1 = tnt.meter.ClassErrorMeter()
 
-    nb = len(train_data)
+    opt['nb'] = len(train_data)
     for b, (x,y) in enumerate(train_data):
         x,y = Variable(x.cuda()), Variable(y.cuda())
         dt = timer()
 
         model.zero_grad()
         yh = model(x)
-        f = criterion(model(x), y) + opt['l2']/2.*fw.norm()**2
+        f = criterion(yh, y)
         f.backward()
 
         optimizer.step()
@@ -69,7 +70,7 @@ def train():
         top1.add(yh.data, y.data)
         loss.add(f.data[0])
 
-        if b % 10 == 0 and b > 0:
+        if b % 100 == 0 and b > 0:
             print '[%03d][%03d/%03d] %.3f %.3f%% [%.3fs]'%(e, b, opt['nb'], \
                     loss.value()[0], top1.value()[0], timer()-dt)
 
@@ -85,11 +86,11 @@ def validate(e):
 
     nb = len(val_data)
     for b, (x,y) in enumerate(val_data):
-        x,y = Variable(x.cuda()), Variable(y.cuda())
+        x,y = Variable(x.cuda(), volatile=True), Variable(y.cuda(), volatile=True)
 
         model.zero_grad()
         yh = model(x)
-        f = criterion(model(x), y) + opt['l2']/2.*fw.norm()**2
+        f = criterion(yh, y)
 
         top1.add(yh.data, y.data)
         loss.add(f.data[0])
@@ -104,23 +105,25 @@ def save_ckpt(e, stats):
     if not os.path.isdir(dirloc):
         os.makedirs(dirloc)
 
+    fn = '%s_%d.pz'%(opt['m'], e)
     r = gitrev(opt)
     meta = dict(SHA=r[0], STATUS=r[1], DIFF=r[2])
     th.save(dict(
             meta = meta,
             opt=json.dumps(opt),
             state_dict=model.state_dict(),
-            stats=stats
-            e=e)
+            stats=stats,
+            e=e),
             os.path.join(dirloc, fn))
 
 # main
 ef = 1 if opt['L'] > 1 else 10
-for e in xrange(opt['e'], opt['B']):
+for e in xrange(0, opt['B']):
     tmm = train(e)
-    vmm = validate(e)
 
-    if e % ef == 0:
+    if e % ef == 0 and e > 0:
         vmm = validate(e)
         save_ckpt(e, dict(train=tmm, val=vmm))
-val(opt['B'])
+
+    print ''
+validate(opt['B'])
