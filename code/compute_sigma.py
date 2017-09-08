@@ -107,8 +107,9 @@ def helper(f):
     rank = (sval > eps).sum()
 
     print '[save back ckpt]...'
-    _ckpt = dict(S=S, eig=eig, sval=sval, rank=rank, fgrad=fgrad.cpu().numpy())
-    ckpt.update(**_ckpt)
+    if not 'b' in ckpt:
+        ckpt['b'] = {}
+    ckpt['b'][opt['b']] = dict(eig=eig, sval=sval, rank=rank)
     th.save(ckpt, f)
 
 if '*' in opt['i']:
