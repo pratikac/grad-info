@@ -49,8 +49,8 @@ def helper(f):
     for bi, (x,y) in enumerate(data):
         x,y = Variable(x.cuda()), Variable(y.cuda())
         model.zero_grad()
-        f = criterion(model(x), y)
-        f.backward()
+        _f = criterion(model(x), y)
+        _f.backward()
         break
 
     N = models.num_parameters(model)
@@ -109,19 +109,20 @@ def helper(f):
     sval = np.linalg.svd(S, compute_uv=False)
     print '[finished svd]... ', timer()-dt
 
-    eps = np.finfo(np.float32).eps
+    eps = sval.max() * N * np.finfo(np.float32).eps
+    print 'eps: ', eps
     rank = (sval > eps).sum()
 
     print '[save back ckpt]...'
-    # if not 'b' in ckpt:
-    #     ckpt['b'] = {}
-    # if opt['b'] in ckpt['b']:
-    #     print 'found key: ', opt['b'], ' in ckpt[b], will overwrite'
-    # ckpt['b'][opt['b']] = dict(eig=eig, sval=sval, rank=rank)
+    if not 'b' in ckpt:
+        ckpt['b'] = {}
+    if opt['b'] in ckpt['b']:
+        print 'found key: ', opt['b'], ' in ckpt[b], will overwrite'
+    ckpt['b'][opt['b']] = dict(eig=eig, sval=sval, rank=rank)
 
-    _ckpt = dict(eig=eig, sval=sval, rank=rank)
-    print eig[:10], sval[:10], rank
-    th.save(_ckpt, f+'.eig.pz')
+    # _ckpt = dict(eig=eig, sval=sval, rank=rank)
+    # th.save(_ckpt, f+'.eig.pz')
+    th.save(ckpt, f)
 
 if '*' in opt['i']:
     print 'Found files: '

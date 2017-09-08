@@ -105,9 +105,20 @@ class lenet(nn.Module):
     def forward(self, x):
         return self.m(x)
 
+class lenett(lenet):
+    name = 'lenett'
+    def __init__(self, opt, c1=4, c2=8, c3=16):
+        if (not 'd' in opt) or opt['d'] < 0:
+            opt['d'] = 0.0
+
+        super(lenett, self).__init__(opt, c1, c2, c3)
+
 class lenets(lenet):
     name = 'lenets'
     def __init__(self, opt, c1=8, c2=16, c3=32):
+        if (not 'd' in opt) or opt['d'] < 0:
+            opt['d'] = 0.0
+
         super(lenets, self).__init__(opt, c1, c2, c3)
 
 class lenetl(lenet):
@@ -162,6 +173,16 @@ class allcnn(nn.Module):
 
     def forward(self, x):
         return self.m(x)
+
+
+class allcnntt(allcnn):
+    name = 'allcnntt'
+    def __init__(self, opt, c1=4, c2=8):
+        if (not 'd' in opt) or opt['d'] < 0:
+            opt['d'] = 0.0
+
+        opt['l2'] = 1e-4
+        super(allcnntt, self).__init__(opt, c1, c2)
 
 class allcnnt(allcnn):
     name = 'allcnnt'
