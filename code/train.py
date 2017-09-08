@@ -20,12 +20,13 @@ opt = add_args([
 ['-m', 'allcnnt', 'lenet | mnistfc | allcnn | wrn* | resnet*'],
 ['-g', 0, 'gpu'],
 ['--dataset', 'cifar10', 'mnist | cifar10 | cifar100 | svhn | imagenet'],
+['-d', -1.0, 'dropout'],
 ['-b', 128, 'batch_size'],
 ['--augment', False, 'data augmentation'],
 ['-B', 5, 'max epochs'],
 ['--lr', 0.1, 'lr'],
 ['--lrs', '', 'lr schedule'],
-['-L', 10, 'stop points for computing S'],
+['-L', 5, 'number of ckpts'],
 ['-s', 42, 'seed'],
 ['-l', False, 'log'],
 ['-v', False, 'verbose']
@@ -100,6 +101,9 @@ def validate(e):
     return r
 
 def save_ckpt(e, stats):
+    if not opt['l']:
+        return
+
     loc = opt.get('o')
     dirloc = os.path.join(loc, opt['m'], opt['filename'])
     if not os.path.isdir(dirloc):
@@ -117,13 +121,16 @@ def save_ckpt(e, stats):
             os.path.join(dirloc, fn))
 
 # main
-ef = 1 if opt['L'] > 1 else 10
-for e in xrange(0, opt['B']):
+tmm, vmm = None, None
+for e in xrange(opt['B']):
     tmm = train(e)
 
-    if e % ef == 0 and e > 0:
+    if e % (opt['B'] // opt['L']) == 0:
         vmm = validate(e)
         save_ckpt(e, dict(train=tmm, val=vmm))
 
     print ''
-validate(opt['B'])
+
+# save on the last one
+vmm = validate(opt['B'])
+save_ckpt(opt['B'], dict(train=tmm, val=vmm))

@@ -166,14 +166,18 @@ class allcnn(nn.Module):
 class allcnnt(allcnn):
     name = 'allcnnt'
     def __init__(self, opt, c1=8, c2=16):
-        opt['d'] = 0.0
-        opt['l2'] = 1e-4
+         if opt['d'] < 0:
+            opt['d'] = 0.0
+
+       opt['l2'] = 1e-4
         super(allcnnt, self).__init__(opt, c1, c2)
 
 class allcnns(allcnn):
     name = 'allcnns'
     def __init__(self, opt, c1=16, c2=32):
-        opt['d'] = 0.0
+        if opt['d'] < 0:
+            opt['d'] = 0.0
+
         opt['l2'] = 1e-4
         super(allcnns, self).__init__(opt, c1, c2)
 
