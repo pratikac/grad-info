@@ -84,23 +84,20 @@ def train(e):
             top1.add(yh.data, y.data)
             loss.add(f.data[0])
 
-    if e < 2:
+    if e < 1:
         for b, (x,y) in enumerate(train_data_128):
             step(x,y,lr=opt['lr'])
     else:
         b = 0
         for (x,y), (x128, y128) in zip(train_data, train_data_128):
             dt = timer()
-            # step(x128, y128, False)
+            step(x128, y128, False)
             step(x,y)
             b += 1
 
             if b % 50 == 0 and b > 0:
                 print '[%03d][%03d/%03d] %.3f %.3f%% [%.3fs]'%(e, b, opt['nb'], \
                         loss.value()[0], top1.value()[0], timer()-dt)
-
-            if b >= opt['nb']:
-                break
 
     r = dict(e=e, f=loss.value()[0], top1=top1.value()[0], train=True)
     print '+[%02d] %.3f %.3f%%'%(e, r['f'], r['top1'])
