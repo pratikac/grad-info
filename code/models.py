@@ -133,12 +133,13 @@ class allcnn(nn.Module):
     def __init__(self, opt, c1=96, c2=192):
         super(allcnn, self).__init__()
 
-        if opt['d'] < 0:
+        if (not 'd' in opt) or opt['d'] < 0:
             if opt['augment']:
                 opt['d'] = 0.0
             else:
                 opt['d'] = 0.5
-        if opt['l2'] < 0:
+
+        if (not 'l2' in opt) or opt['l2'] < 0:
             opt['l2'] = 1e-3
 
         num_classes = get_num_classes(opt)

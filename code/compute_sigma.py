@@ -103,15 +103,18 @@ def helper(f):
     dt = timer()
     eig = np.linalg.eigvalsh(S)
     print '[finished eig]... ', timer()-dt
+    print 'eig: ', eig[:100]
 
     print '[begin svd]...'
     dt = timer()
     sval = np.linalg.svd(S, compute_uv=False)
     print '[finished svd]... ', timer()-dt
+    print 'sval: ', sval[:100]
 
     eps = sval.max() * N * np.finfo(np.float32).eps
     print 'eps: ', eps
     rank = (sval > eps).sum()
+    print 'rank: ', rank
 
     print '[save back ckpt]...'
     if not 'b' in ckpt:
@@ -121,6 +124,7 @@ def helper(f):
     ckpt['b'][opt['b']] = dict(eig=eig, sval=sval, rank=rank)
 
     _ckpt = dict(eig=eig, sval=sval, rank=rank)
+
     th.save(_ckpt, f+'.eig.pz')
     th.save(ckpt, f)
 
