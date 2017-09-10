@@ -72,7 +72,7 @@ def train(e):
         f.backward()
 
         for p in optimizer.param_groups:
-            p['lr'] = opt['lr']*x.size(0)/128.0
+            p['lr'] = min(opt['lr']*x.size(0)/128.0, 1)
 
         optimizer.step()
 
