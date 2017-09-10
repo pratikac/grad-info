@@ -9,6 +9,8 @@ import exptutils
 import numpy as np
 from torch.nn.parallel import scatter, parallel_apply, gather
 
+import microbn
+
 def get_num_classes(opt):
     num_classes = 0
     if opt['dataset'] == 'cifar10' or opt['dataset'] == 'svhn':
@@ -145,10 +147,13 @@ class allcnn(nn.Module):
         num_classes = get_num_classes(opt)
         beta = 100
 
+        # bn = nn.BatchNorm2d
+        bn = MicroBatchNorm2d
+
         def convbn(ci,co,ksz,s=1,pz=0):
             return nn.Sequential(
                 nn.Conv2d(ci,co,ksz,stride=s,padding=pz),
-                nn.BatchNorm2d(co),
+                bn(co),
                 nn.ReLU(True)
                 )
         self.m = nn.Sequential(
@@ -174,7 +179,6 @@ class allcnn(nn.Module):
 
     def forward(self, x):
         return self.m(x)
-
 
 class allcnntt(allcnn):
     name = 'allcnntt'
