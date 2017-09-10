@@ -57,8 +57,6 @@ optimizer = th.optim.SGD(model.parameters(), lr=opt['lr'],
 
 def train(e):
     opt['lr'] = lrschedule(opt, e)
-    for p in optimizer.param_groups:
-        p['lr'] = opt['lr']
 
     model.train()
     loss = tnt.meter.AverageValueMeter()
@@ -66,34 +64,37 @@ def train(e):
 
     opt['nb'] = len(train_data)
 
-    def step(x,y, log=True,lr=None):
+    def step(x,y, log=True):
         x,y = Variable(x.cuda()), Variable(y.cuda())
         model.zero_grad()
         yh = model(x)
         f = criterion(yh, y)
         f.backward()
 
-        optimizer.param_groups[0]['lr'] = lr
+        for p in optimizer.param_groups:
+            p['lr'] = opt['lr']*x.size(0)/128.0
+
         optimizer.step()
 
         if log:
             top1.add(yh.data, y.data)
             loss.add(f.data[0])
 
-    if e < 5:
-        for b, (x,y) in enumerate(train_data_128):
-            step(x,y,lr=opt['lr'])
-    else:
-        for b, (x,y) in enumerate(train_data):
-            dt = timer()
-            step(x,y,lr=opt['lr']*opt['b']/128.)
+    data = train_data_128
+    if e >= 5:
+        data = train_data
 
-            if b % 50 == 0 and b > 0:
-                print '[%03d][%03d/%03d] %.3f %.3f%% [%.3fs]'%(e, b, opt['nb'], \
-                        loss.value()[0], top1.value()[0], timer()-dt)
+    dt = timer()
+    for b, (x,y) in enumerate(data):
+        _dt = timer()
+        step(x,y)
+
+        if b % 50 == 0 and b > 0:
+            print '[%03d][%03d/%03d] %.3f %.3f%% [%.3fs]'%(e, b, opt['nb'], \
+                    loss.value()[0], top1.value()[0], timer()-_dt)
 
     r = dict(e=e, f=loss.value()[0], top1=top1.value()[0], train=True)
-    print '+[%02d] %.3f %.3f%%'%(e, r['f'], r['top1'])
+    print '+[%02d] %.3f %.3f%% [%.3fs]'%(e, r['f'], r['top1'], timer()-dt)
     return r
 
 def validate(e):
