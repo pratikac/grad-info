@@ -73,27 +73,20 @@ def train(e):
         f = criterion(yh, y)
         f.backward()
 
-        # optimizer.param_groups[0]['lr'] = min(opt['lr']*x.size(0)/128.0, 1)
-        if lr is None:
-            optimizer.param_groups[0]['lr'] = opt['lr']*opt['b']/128.0
-        else:
-            optimizer.param_groups[0]['lr'] = lr
+        optimizer.param_groups[0]['lr'] = lr
         optimizer.step()
 
         if log:
             top1.add(yh.data, y.data)
             loss.add(f.data[0])
 
-    if e < 1:
+    if e < 5:
         for b, (x,y) in enumerate(train_data_128):
             step(x,y,lr=opt['lr'])
     else:
-        b = 0
-        for (x,y), (x128, y128) in zip(train_data, train_data_128):
+        for b, (x,y) in enumerate(train_data):
             dt = timer()
-            step(x128, y128, False)
-            step(x,y)
-            b += 1
+            step(x,y,lr=opt['lr']*opt['b']/128.)
 
             if b % 50 == 0 and b > 0:
                 print '[%03d][%03d/%03d] %.3f %.3f%% [%.3fs]'%(e, b, opt['nb'], \
