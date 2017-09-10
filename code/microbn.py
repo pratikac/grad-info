@@ -34,14 +34,13 @@ class _MicroBatchNorm(nn.Module):
 
     def forward(self, input):
         mbsz = self.mbsz
-        L = input.size(0) // mbsz
-        assert isinstance(L, int), 'Microbatchnorm needs L=%f to be int'%L
-
         y = []
-        for l in xrange(L):
-            _y = F.batch_norm(
-            input[l*mbsz:(l+1)*mbsz], self.running_mean, self.running_var, self.weight, self.bias,
+        s = 0
+        while s < input.size(0):
+            e = min(s+mbsz, input.size(0))
+            _y = F.batch_norm(input[s:e], self.running_mean, self.running_var, self.weight, self.bias,
             self.training, self.momentum, self.eps)
+            s += mbsz
             y.append(_y)
         return torch.cat(y)
 

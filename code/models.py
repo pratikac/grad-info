@@ -9,7 +9,7 @@ import exptutils
 import numpy as np
 from torch.nn.parallel import scatter, parallel_apply, gather
 
-import microbn
+from microbn import MicroBatchNorm2d, MicroBatchNorm1d
 
 def get_num_classes(opt):
     num_classes = 0
