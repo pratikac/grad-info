@@ -233,9 +233,13 @@ def unflatten_vector(v, szs):
         n += _n
     return r
 
-def flatten_params(m, fw, fdw):
-    idx = 0
+def flatten_params(m):
+    N = sum([p.numel() for p in m.parameters()])
+    dtype = type(list(m.parameters())[0].data)
+    fw = th.FloatTensor(N).type(dtype)
+    fdw = th.FloatTensor(N).type(dtype)
 
+    idx = 0
     for w in m.parameters():
         n = w.numel()
         fw[idx:idx+n].copy_(w.data.view(-1))
@@ -246,6 +250,7 @@ def flatten_params(m, fw, fdw):
             w.grad.data.set_(fdw.storage(), idx, w.size())
 
         idx += w.data.numel()
+    return fw, fdw
 
 def pprint_dict(d):
     wl = [float, np.float32, np.float64, np.int, int, int, str, bool]
