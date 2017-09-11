@@ -74,15 +74,17 @@ class mnistfc(nn.Module):
 
 class lenet(nn.Module):
     name = 'lenet'
-    def __init__(self, opt, c1=20, c2=50, c3=500):
+    def __init__(self, opt, c1=20, c2=50, c3=500, microbn=False):
         super(lenet, self).__init__()
 
         if opt['d'] < 0:
             opt['d'] = 0.25
         opt['l2'] = 0.
 
-        # bn1, bn2 = nn.BatchNorm1d, nn.BatchNorm2d
-        bn1, bn2 = MicroBatchNorm1d, MicroBatchNorm2d
+        if microbn:
+            bn1, bn2 = MicroBatchNorm1d, MicroBatchNorm2d
+        else:
+            bn1, bn2 = nn.BatchNorm1d, nn.BatchNorm2d
 
         def convbn(ci,co,ksz,psz,p):
             return nn.Sequential(
@@ -135,7 +137,7 @@ class lenetl(lenet):
 class allcnn(nn.Module):
     name = 'allcnn'
 
-    def __init__(self, opt, c1=96, c2=192):
+    def __init__(self, opt, c1=96, c2=192, microbn=False):
         super(allcnn, self).__init__()
 
         if (not 'd' in opt) or opt['d'] < 0:
@@ -148,15 +150,16 @@ class allcnn(nn.Module):
             opt['l2'] = 1e-3
 
         num_classes = get_num_classes(opt)
-        beta = 100
 
-        # bn = nn.BatchNorm2d
-        bn = MicroBatchNorm2d
+        if microbn:
+            bn1, bn2 = MicroBatchNorm1d, MicroBatchNorm2d
+        else:
+            bn1, bn2 = nn.BatchNorm1d, nn.BatchNorm2d
 
         def convbn(ci,co,ksz,s=1,pz=0):
             return nn.Sequential(
                 nn.Conv2d(ci,co,ksz,stride=s,padding=pz),
-                bn(co),
+                bn2(co),
                 nn.ReLU(True)
                 )
         self.m = nn.Sequential(

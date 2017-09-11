@@ -62,49 +62,35 @@ def train(e):
     loss = tnt.meter.AverageValueMeter()
     top1 = tnt.meter.ClassErrorMeter()
 
-    def step(x,y, log=True, lr=None, step=True):
+    def step(x,y, log=True):
         x,y = Variable(x.cuda()), Variable(y.cuda())
         model.zero_grad()
         yh = model(x)
         f = criterion(yh, y)
         f.backward()
 
-        if lr is None:
-            optimizer.param_groups[0]['lr'] = min(opt['lr']*x.size(0)/128.0, 1)
-            optimizer.param_groups[0]['momentum'] = 0.9
-        else:
-            optimizer.param_groups[0]['lr'] = lr
-            optimizer.param_groups[0]['momentum'] = 0
+        for p in optimizer.param_groups:
+            p['lr'] = min(opt['lr']*x.size(0)/128.0, 1)
 
-        if step:
-            optimizer.step()
+        optimizer.step()
 
         if log:
             top1.add(yh.data, y.data)
             loss.add(f.data[0])
 
+    data = train_data_128
+    if e >= 5:
+        data = train_data
+    opt['nb'] = len(data)
+
     dt = timer()
-    if e < 5:
-        opt['nb'] = len(train_data_128)
-        for b, (x,y) in enumerate(train_data_128):
-            _dt = timer()
-            step(x,y)
+    for b, (x,y) in enumerate(data):
+        _dt = timer()
+        step(x,y)
 
-            if b % 50 == 0 and b > 0:
-                print '[%03d][%03d/%03d] %.3f %.3f%% [%.3fs]'%(e, b, opt['nb'], \
-                        loss.value()[0], top1.value()[0], timer()-_dt)
-    else:
-        b = 0
-        opt['nb'] = len(train_data)
-        for (x,y), (x128, y128) in zip(train_data, train_data_128):
-            _dt = timer()
-            step(x128, y128, log=False, lr=opt['lr'])
-            step(x,y)
-            b += 1
-
-            if b % 5 == 0 and b > 0:
-                print '[%03d][%03d/%03d] %.3f %.3f%% [%.3fs]'%(e, b, opt['nb'], \
-                        loss.value()[0], top1.value()[0], timer()-_dt)
+        if b % 50 == 0 and b > 0:
+            print '[%03d][%03d/%03d] %.3f %.3f%% [%.3fs]'%(e, b, opt['nb'], \
+                    loss.value()[0], top1.value()[0], timer()-_dt)
 
     r = dict(e=e, f=loss.value()[0], top1=top1.value()[0], train=True)
     print '+[%02d] %.3f %.3f%% [%.3fs]'%(e, r['f'], r['top1'], timer()-dt)
