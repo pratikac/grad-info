@@ -16,7 +16,8 @@ def color(c, s):
     return colors[c][0] + s + colors[c][1]
 
 def add_args(args):
-    p = argparse.ArgumentParser('')
+    p = argparse.ArgumentParser('',
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     # [key, default, help, {action_store etc.}]
     for a in args:
         if len(a) == 2:
