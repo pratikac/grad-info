@@ -18,6 +18,7 @@ from copy import deepcopy
 opt = add_args([
 ['-o', '/home/%s/local2/pratikac/results'%os.environ['USER'], 'output'],
 ['-m', 'allcnnt', 'lenet | mnistfc | allcnn | wrn* | resnet*'],
+['-r', '', 'retrain'],
 ['-g', 0, 'gpu'],
 ['--dataset', 'cifar10', 'mnist | cifar10 | cifar100 | svhn | imagenet'],
 ['-d', -1.0, 'dropout'],
@@ -35,6 +36,8 @@ opt = add_args([
 ['-v', False, 'verbose']
 ])
 
+best_mm = None
+
 setup(opt)
 
 model = getattr(models, opt['m'])(opt, microbn=not opt['no_microbn']).cuda()
@@ -43,7 +46,7 @@ if opt['g'] >= th.cuda.device_count():
     model = nn.DataParallel(model).cuda()
 criterion = nn.CrossEntropyLoss().cuda()
 
-build_filename(opt, blacklist=['i', 'check', 'L'])
+build_filename(opt, blacklist=['i', 'check', 'r', 'no_microbn', 'no_dual_batch', 'burnin'])
 pprint(opt)
 
 dataset, augment = getattr(loader, opt['dataset'])(opt)
@@ -73,7 +76,7 @@ def train(e):
         f.backward()
 
         if lr is None:
-            optimizer.param_groups[0]['lr'] = min(opt['lr']*x.size(0)/128.0, 1)
+            optimizer.param_groups[0]['lr'] = min(opt['lr']*x.size(0)/128.0, 10)
             optimizer.param_groups[0]['momentum'] = 0.9
         else:
             optimizer.param_groups[0]['lr'] = lr
@@ -140,6 +143,8 @@ def save_ckpt(e, stats):
     if not opt['l']:
         return
 
+    global best_mm
+
     loc = opt.get('o')
     dirloc = os.path.join(loc, opt['m'], opt['filename'])
     if not os.path.isdir(dirloc):
@@ -156,15 +161,25 @@ def save_ckpt(e, stats):
             e=e),
             os.path.join(dirloc, fn))
 
+def load_ckpt():
+    if opt['r'] == '':
+        return
+
+    print('Loading model from: ', opt['r'])
+    d = th.load(opt['r'])
+    model.load_state_dict(d['state_dict'])
+    opt['e'] = d['e'] + 1
+    print('[Loaded model, check validation error]')
+    validate(d['e'])
+
 # main
+opt['e'] = 0
+load_ckpt()
 tmm, vmm = None, None
-for e in xrange(opt['B']):
+for e in xrange(opt['e'], opt['B']):
     tmm = train(e)
     vmm = validate(e)
-
-    # if e % (opt['B'] // opt['L']) == 0:
-    #     vmm = validate(e)
-    #     save_ckpt(e, dict(train=tmm, val=vmm))
+    save_ckpt(e, dict(train=tmm, val=vmm))
 
     print ''
 
