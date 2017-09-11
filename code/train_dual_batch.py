@@ -94,7 +94,7 @@ def train(e):
             step(x,y)
 
             if b % 50 == 0 and b > 0:
-                print '[%03d][%03d/%03d] %.3f %.3f%% [%.3fs]'%(e, b, opt['nb'], \
+                print '[%03d][%03d/%03d] %.4f %.3f%% [%.3fs]'%(e, b, opt['nb'], \
                         loss.value()[0], top1.value()[0], timer()-_dt)
     else:
         b = 0
@@ -107,11 +107,11 @@ def train(e):
             b += 1
 
             if b % 5 == 0 and b > 0:
-                print '[%03d][%03d/%03d] %.3f %.3f%% [%.3fs]'%(e, b, opt['nb'], \
+                print '[%03d][%03d/%03d] %.4f %.3f%% [%.3fs]'%(e, b, opt['nb'], \
                         loss.value()[0], top1.value()[0], timer()-_dt)
 
     r = dict(e=e, f=loss.value()[0], top1=top1.value()[0], train=True)
-    print '+[%02d] %.3f %.3f%% [%.3fs]'%(e, r['f'], r['top1'], timer()-dt)
+    print '+[%02d] %.4f %.3f%% [%.3fs]'%(e, r['f'], r['top1'], timer()-dt)
     return r
 
 def validate(e):
@@ -133,7 +133,7 @@ def validate(e):
         loss.add(f.data[0])
 
     r = dict(e=e, f=loss.value()[0], top1=top1.value()[0], val=True)
-    print '*[%02d] %.3f %.3f%%'%(e, r['f'], r['top1'])
+    print '*[%02d] %.4f %.3f%%'%(e, r['f'], r['top1'])
     return r
 
 def save_ckpt(e, stats):
