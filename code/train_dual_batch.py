@@ -29,12 +29,15 @@ opt = add_args([
 ['-L', 5, 'number of ckpts'],
 ['-s', 42, 'seed'],
 ['-l', False, 'log'],
+['--microbn', True, 'microbn'],
+['--burnin', 5, 'burnin'],
+['--dual_batch', True, 'dual_batch'],
 ['-v', False, 'verbose']
 ])
 
 setup(opt)
 
-model = getattr(models, opt['m'])(opt, microbn=True).cuda()
+model = getattr(models, opt['m'])(opt, microbn=opt['microbn']).cuda()
 if opt['g'] >= th.cuda.device_count():
     print '[Using DataParallel]'
     model = nn.DataParallel(model).cuda()
@@ -84,7 +87,7 @@ def train(e):
             loss.add(f.data[0])
 
     dt = timer()
-    if e < 5:
+    if e < opt['burnin']:
         opt['nb'] = len(train_data_128)
         for b, (x,y) in enumerate(train_data_128):
             _dt = timer()
@@ -98,7 +101,8 @@ def train(e):
         opt['nb'] = len(train_data)
         for (x,y), (x128, y128) in zip(train_data, train_data_128):
             _dt = timer()
-            step(x128, y128, log=False, lr=opt['lr'])
+            if opt['dual_batch']:
+                step(x128, y128, log=False, lr=opt['lr'])
             step(x,y)
             b += 1
 
