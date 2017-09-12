@@ -76,7 +76,7 @@ def train(e):
         f.backward()
 
         if lr is None:
-            optimizer.param_groups[0]['lr'] = min(opt['lr']*x.size(0)/128.0, 10)
+            optimizer.param_groups[0]['lr'] = min(opt['lr']*x.size(0)/128.0, 1)
             optimizer.param_groups[0]['momentum'] = 0.9
         else:
             optimizer.param_groups[0]['lr'] = lr
@@ -106,6 +106,7 @@ def train(e):
             _dt = timer()
             if not opt['no_dual_batch']:
                 step(x128, y128, log=False, lr=opt['lr'])
+                step(x128, y128, log=False, lr=-opt['lr'])
             step(x,y)
             b += 1
 
