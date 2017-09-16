@@ -12,16 +12,11 @@ from torch.nn.parallel import scatter, parallel_apply, gather
 from microbn import MicroBatchNorm2d, MicroBatchNorm1d
 
 def get_num_classes(opt):
-    num_classes = 0
-    if opt['dataset'] == 'cifar10' or opt['dataset'] == 'svhn':
-        num_classes = 10
-    elif opt['dataset'] == 'cifar100':
-        num_classes = 100
-    elif opt['dataset'] == 'imagenet':
-        num_classes = 1000
-    else:
+    d = dict(mnist=10, svhn=10, cifar10=10,
+            cifar100=100, imagenet=1000)
+    if not opt['dataset'] in d:
         assert False, 'Unknown dataset: %s'%opt['dataset']
-    return num_classes
+    return d[opt['dataset']]
 
 class View(nn.Module):
     def __init__(self,o):
@@ -569,91 +564,3 @@ class densenet(nn.Module):
 
     def forward(self, x):
         return self.m(x)
-
-class LSTM(nn.Module):
-    def __init__(self, opt):
-        super(LSTM, self).__init__()
-        xdim, hdim, nlayers = opt['vocab'], opt['hdim'], opt['layers']
-        self.drop = nn.Dropout(opt['d'])
-        self.encoder = nn.Embedding(xdim, hdim)
-        self.rnn = nn.LSTM(hdim, hdim, nlayers, dropout=opt['d'])
-        self.decoder = nn.Linear(hdim, xdim)
-
-        # tie weights
-        self.decoder.weight = self.encoder.weight
-        self.init_weights()
-
-        self.hdim = hdim
-        self.nlayers = nlayers
-
-    def init_weights(self):
-        dw = 0.05
-        self.encoder.weight.data.uniform_(-dw, dw)
-        self.decoder.bias.data.fill_(0)
-        self.decoder.weight.data.uniform_(-dw, dw)
-
-    def forward(self, x, h):
-        f = self.drop(self.encoder(x))
-        yh, h = self.rnn(f, h)
-        yh = self.drop(yh)
-        decoded = self.decoder(yh.view(yh.size(0)*yh.size(1), yh.size(2)))
-        return decoded.view(yh.size(0), yh.size(1), decoded.size(1)), h
-
-    def init_hidden(self, bsz):
-        w = next(self.parameters()).data
-        return (Variable(w.new(self.nlayers, bsz, self.hdim).zero_()),
-                Variable(w.new(self.nlayers, bsz, self.hdim).zero_()))
-
-def repackage_hidden(h):
-    if type(h) == Variable:
-        return Variable(h.data)
-    else:
-        return tuple(repackage_hidden(v) for v in h)
-
-class ptbs(LSTM):
-    name = 'ptbs'
-    def __init__(self, opt):
-        super(ptbs, self).__init__(dict(vocab=opt['vocab'], hdim=200, layers=2, d=0.2))
-
-class ptbl(LSTM):
-    name = 'ptbl'
-    def __init__(self, opt):
-        super(ptbl, self).__init__(dict(vocab=opt['vocab'], hdim=1500, layers=2, d=0.65))
-
-class ParallelModel(nn.Module):
-    def __init__(self, models, opt, gpus):
-        super(ParallelModel, self).__init__()
-
-        self.gpus = gpus
-
-        self.t = 0
-        self.n = len(models)
-        n = self.n
-
-        self.ids = [gpus[i%len(gpus)] for i in xrange(n)]
-        self.w = [globals()[opt['m']](opt).cuda(self.ids[i]) for i in xrange(n)]
-
-        self.N = sum([p.numel() for p in self.w[0].parameters()])
-
-        for i in range(n):
-            self.w[i].load_state_dict(models[i])
-
-    def forward(self, xs, ys):
-        xs = [[a] for a in xs]
-        return parallel_apply(self.w, xs)
-
-    def backward(self, fs):
-        f = sum(gather(fs, self.ids[0]))
-        f.backward()
-
-    def train(self):
-        for i in xrange(self.n):
-            self.w[i].train()
-
-    def eval(self):
-        for i in xrange(self.n):
-            self.w[i].eval()
-
-    def zero_grad(self):
-        for i in xrange(self.n):
-            self.w[i].zero_grad()

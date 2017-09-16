@@ -78,7 +78,6 @@ def helper(f):
 
     print '[computing S2]'
     fgrad = full_grad()
-    S2 = th.ger(fgrad, fgrad).cpu().numpy()
 
     print '[computing S1]'
     S1 = th.FloatTensor(N,N).zero_().cuda()
@@ -97,12 +96,11 @@ def helper(f):
 
         if b % 1000 == 0:
             print b, timer()-_dt
+
     S1.div_(len(data))
+    S1 = S1.cpu()
 
-    S1 = S1.cpu().numpy()
-    S = S1 - S2
-
-    th.save(dict(S=S, S1=S1, S2=S2), f+'.S.pz')
+    th.save(dict(S1=S1, fgrad=fgrad), f+'.S.pz')
 
 def compute_stats(f):
     # print '[finished computing S]... ', timer()-dt
