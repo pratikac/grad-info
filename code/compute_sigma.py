@@ -14,6 +14,7 @@ import logging
 from pprint import pprint
 import pdb, glob2, sys, gc, time, os, json
 from copy import deepcopy
+import cPickle as pickle
 
 opt = add_args([
 ['-g', 0, 'gpu'],
@@ -98,7 +99,8 @@ def helper(f):
 
     S.div_(opt['nb'])
     fn = f+'.S.pz'
-    th.save(dict(opt=opt, S=S.cpu(), fgrad=fgrad.cpu()), fn)
+    res = dict(opt=opt, S=S.cpu(), fgrad=fgrad.cpu())
+    th.save(res, fn)
 
 def compute_stats(f):
     fn = f+'.S.pz'
@@ -108,9 +110,8 @@ def compute_stats(f):
 
     d = th.load(fn)
     S, fgrad = d['S'].numpy(), d['fgrad'].numpy()
-    # S2 = np.outer(fgrad, fgrad)
-    # S1 = S + S2
-    # del S, fgrad
+    S2 = np.outer(fgrad, fgrad)
+    S1 = S + S2
 
     print '[begin eig]...'
     dt = timer()
