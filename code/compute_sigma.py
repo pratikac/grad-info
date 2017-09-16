@@ -97,8 +97,6 @@ def helper(f):
         if b % 100 == 0:
             print '[%d] %.2fs'%(b, timer()-_dt)
 
-        break
-
     S.div_(opt['nb'])
     fn = f+'.S.pz'
     th.save(dict(opt=opt, S=S.cpu(), fgrad=fgrad.cpu()), fn)
