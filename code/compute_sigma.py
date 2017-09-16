@@ -95,7 +95,7 @@ def helper(f):
         S.add_(th.ger(tmp,tmp))
 
         if b % 100 == 0:
-            print '[%d] %.2f'%(b, timer()-_dt)
+            print '[%d] %.2fs'%(b, timer()-_dt)
 
         break
 
@@ -105,7 +105,7 @@ def helper(f):
 
 def compute_stats(f):
     fn = f+'.S.pz'
-    if not os.paths.ifile(fn):
+    if not os.path.isfile(fn):
         print 'File %s not found, runing helper()'%f+'.S.pz'
         helper(f)
 
