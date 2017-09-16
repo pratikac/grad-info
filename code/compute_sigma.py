@@ -90,8 +90,7 @@ def helper(f):
         _f = criterion(model(x), y) + opt['l2']/2.*fw.norm()**2
         _f.backward()
 
-        tmp = fdw.clone()
-        tmp.add_(-1/float(opt['nb']), fgrad)
+        tmp = fdw.clone().add_(-1, fgrad)
         S.add_(th.ger(tmp,tmp))
 
         if b % 100 == 0:
