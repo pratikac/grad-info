@@ -119,11 +119,12 @@ def compute_stats(f):
     eig, evec = eig.real, evec.real
     print '[finished eig]... ', timer()-dt
 
-    print '[begin svd]...'
-    dt = timer()
-    sval = np.linalg.svd(S, compute_uv=False)
-    print '[finished svd]... ', timer()-dt
+    # print '[begin svd]...'
+    # dt = timer()
+    # sval = np.linalg.svd(S, compute_uv=False)
+    # print '[finished svd]... ', timer()-dt
 
+    sval = eig
     eps = sval.max() * S.shape[0] * np.finfo(np.float32).eps
     rank = (sval > eps).sum()
 
@@ -133,7 +134,7 @@ def compute_stats(f):
     # rank = 2
 
     n = 1000
-    res = dict(eig=eig[:n], evec=evec[:,:n], sval=sval[:n], rank=rank)
+    res = dict(eig=eig, evec=evec[:,:n], sval=sval, rank=rank)
     th.save(res, f+'.eig.pz')
 
 if __name__ == '__main__':
