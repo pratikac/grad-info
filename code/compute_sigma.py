@@ -14,7 +14,7 @@ import logging
 from pprint import pprint
 import pdb, glob2, sys, gc, time, os, json
 from copy import deepcopy
-import cPickle as pickle
+import hickle as hkl
 
 opt = add_args([
 ['-g', 0, 'gpu'],
@@ -116,6 +116,7 @@ def compute_stats(f):
     print '[begin eig]...'
     dt = timer()
     eig, evec = np.linalg.eigh(S)
+    eig, evec = eig.real, evec.real
     print '[finished eig]... ', timer()-dt
 
     print '[begin svd]...'
@@ -126,7 +127,13 @@ def compute_stats(f):
     eps = sval.max() * S.shape[0] * np.finfo(np.float32).eps
     rank = (sval > eps).sum()
 
-    res = dict(eig=eig, evec=evec, sval=sval, rank=rank)
+    # eig = np.zeros(S.shape[0])
+    # evec = S
+    # sval = np.random.randn(S.shape[0])
+    # rank = 2
+
+    n = 1000
+    res = dict(eig=eig[:n], evec=evec[:,:n], sval=sval[:n], rank=rank)
     th.save(res, f+'.eig.pz')
 
 if __name__ == '__main__':
