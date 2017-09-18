@@ -42,7 +42,7 @@ class _MicroBatchNorm(nn.Module):
             self.training, self.momentum, self.eps)
             s += mbsz
             y.append(_y)
-        return torch.cat(y)/float(len(y))
+        return torch.cat(y)
 
     def __repr__(self):
         return ('{name}({num_features}, eps={eps}, momentum={momentum},'
