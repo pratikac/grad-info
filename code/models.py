@@ -154,7 +154,7 @@ class allcnn(nn.Module):
         def convbn(ci,co,ksz,s=1,pz=0):
             return nn.Sequential(
                 nn.Conv2d(ci,co,ksz,stride=s,padding=pz),
-                bn2(co,8),
+                bn2(co,mbsz=8),
                 nn.ReLU(True)
                 )
         self.m = nn.Sequential(
