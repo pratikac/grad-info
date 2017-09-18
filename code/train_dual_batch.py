@@ -105,8 +105,9 @@ def train(e):
         for (x,y), (x128, y128) in zip(train_data, train_data_128):
             _dt = timer()
             if not opt['no_dual_batch']:
-                step(x128, y128, log=False, lr=min(opt['lr']*opt['b']/128.0, 1))
-                step(x128, y128, log=False, lr=-min(opt['lr']*opt['b']/128.0, 1))
+                step(x128, y128, log=False, lr=opt['lr'])
+                #step(x128, y128, log=False, lr=min(opt['lr']*opt['b']/128.0, 0.1))
+                #step(x128, y128, log=False, lr=-min(opt['lr']*opt['b']/128.0, 0.1))
             step(x,y)
             b += 1
 
