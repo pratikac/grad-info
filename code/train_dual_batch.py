@@ -120,7 +120,7 @@ def train(e):
     return r
 
 def validate(e):
-    dry_feed(model, train_data)
+    dry_feed(model, train_data_128)
     model.eval()
 
     loss = tnt.meter.AverageValueMeter()
