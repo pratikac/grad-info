@@ -119,19 +119,9 @@ def compute_stats(f):
     eig, evec = eig.real, evec.real
     print '[finished eig]... ', timer()-dt
 
-    # print '[begin svd]...'
-    # dt = timer()
-    # sval = np.linalg.svd(S, compute_uv=False)
-    # print '[finished svd]... ', timer()-dt
-
     sval = eig
     eps = sval.max() * S.shape[0] * np.finfo(np.float32).eps
     rank = (sval > eps).sum()
-
-    # eig = np.zeros(S.shape[0])
-    # evec = S
-    # sval = np.random.randn(S.shape[0])
-    # rank = 2
 
     n = 1000
     res = dict(eig=eig, evec=evec[:,:n], sval=sval, rank=rank)
