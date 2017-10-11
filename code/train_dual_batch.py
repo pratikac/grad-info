@@ -102,13 +102,17 @@ def train(e):
     else:
         b = 0
         opt['nb'] = len(train_data)
-        for (x,y), (x128, y128) in zip(train_data, train_data_128):
+        train_iter = loaders[0]['train'].__iter__()
+        train_iter_128 = loaders_128[0]['train'].__iter__()
+        for b in xrange(len(train_data)):
+            x,y = next(train_iter)
+            x128, y128 = next(train_iter_128)
             _dt = timer()
             if not opt['no_dual_batch']:
-                step(x128, y128, log=False, lr=min(opt['lr']*opt['b']/128.0, 1))
-                step(x128, y128, log=False, lr=-min(opt['lr']*opt['b']/128.0, 1))
+                step(x128, y128, log=False, lr=opt['lr'])
+                #step(x128, y128, log=False, lr=min(opt['lr']*opt['b']/128.0, 0.1))
+                #step(x128, y128, log=False, lr=-min(opt['lr']*opt['b']/128.0, 0.1))
             step(x,y)
-            b += 1
 
             if b % 5 == 0 and b > 0:
                 print '[%03d][%03d/%03d] %.4f %.3f%% [%.3fs]'%(e, b, opt['nb'], \

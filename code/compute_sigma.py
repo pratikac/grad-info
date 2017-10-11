@@ -14,14 +14,16 @@ import logging
 from pprint import pprint
 import pdb, glob2, sys, gc, time, os, json
 from copy import deepcopy
+import hickle as hkl
 
 opt = add_args([
 ['-g', 0, 'gpu'],
-['-i', '', 'location of modules'],
-['-b', 128, 'batch_size'],
+['-i', '', 'location of ckpts'],
+['-b', 1, 'batch_size'],
 ['--augment', False, 'data augmentation'],
 ['-B', 5, 'max epochs'],
 ['-l', False, 'log'],
+['--stats', False, 'compute stats']
 ])
 
 setup(opt)
@@ -43,25 +45,26 @@ def helper(f):
     dataset, augment = getattr(loader, opt['dataset'])(opt)
     loaders = loader.get_loaders(dataset, augment, opt)
     data = loaders[0]['train_full']
-    opt['nb'] = len(data)
 
     # populate buffers before flattening params
     for bi, (x,y) in enumerate(data):
-        x,y = Variable(x.cuda()), Variable(y.cuda())
-        model.zero_grad()
-        _f = criterion(model(x), y)
+        _f = criterion(model(Variable(x.cuda())), Variable(y.cuda()))
         _f.backward()
         break
 
     N = models.num_parameters(model)
-    fw, fdw = th.FloatTensor(N).cuda(), th.FloatTensor(N).cuda()
-    flatten_params(model, fw, fdw)
-    model.train()
+    fw, fdw = flatten_params(model)
+    model.eval()
 
     def full_grad():
+        _opt = deepcopy(opt)
+        _opt['b'] = 1024
+        _full_loaders = loader.get_loaders(dataset, augment, _opt)
+        _data = _full_loaders[0]['train_full']
+
         grad = th.FloatTensor(N).cuda().zero_()
 
-        for bi, (x,y) in enumerate(data):
+        for _, (x,y) in enumerate(_data):
             x,y = Variable(x.cuda()), Variable(y.cuda())
             model.zero_grad()
             yh = model(x)
@@ -69,73 +72,76 @@ def helper(f):
             _f.backward()
             grad.add_(fdw)
 
-        grad.div_(opt['nb'])
+        grad.div_(len(_data))
         return grad
 
-    print '[start computing S]'
-    S = th.FloatTensor(N,N).zero_().cuda()
+    print '[computing full grad]'
     fgrad = full_grad()
 
-    i = 0
-    dt = timer()
-    for e in xrange(opt['B']):
-        for b, (x,y) in enumerate(data):
-            _dt = timer()
-            x,y = Variable(x.cuda()), Variable(y.cuda())
+    print '[computing S]'
+    S = th.FloatTensor(N,N).zero_().cuda()
 
-            model.zero_grad()
-            yh = model(x)
-            _f = criterion(model(x), y) + opt['l2']/2.*fw.norm()**2
-            _f.backward()
+    # with bsz = 1
+    opt['nb'] = len(data)
+    for b, (x,y) in enumerate(data):
+        _dt = timer()
+        x,y = Variable(x.cuda()), Variable(y.cuda())
+        model.zero_grad()
+        yh = model(x)
+        _f = criterion(model(x), y) + opt['l2']/2.*fw.norm()**2
+        _f.backward()
 
-            tmp = fdw.clone().add_(-1, fgrad)
-            S.add_(th.ger(tmp, tmp))
-            i += 1
+        tmp = fdw.clone().add_(-1, fgrad)
+        S.add_(th.ger(tmp,tmp))
 
-            if b % 10 == 0:
-                print e, b, timer()-_dt
+        if b % 100 == 0:
+            print '[%d] %.2fs'%(b, timer()-_dt)
 
-    S.div_(i)
-    S = S.cpu().numpy()
+    S.div_(opt['nb'])
+    fn = f+'.S.pz'
+    res = dict(opt=opt, S=S.cpu(), fgrad=fgrad.cpu())
+    th.save(res, fn)
 
-    print '[finished computing S]... ', timer()-dt
+def compute_stats(f):
+    fn = f+'.S.pz'
+    if not os.path.isfile(fn):
+        print 'File %s not found, runing helper()'%f+'.S.pz'
+        helper(f)
+
+    d = th.load(fn)
+    S, fgrad = d['S'].numpy(), d['fgrad'].numpy()
+    S2 = np.outer(fgrad, fgrad)
+    S1 = S + S2
+
     print '[begin eig]...'
     dt = timer()
-    eig = np.linalg.eigvalsh(S)
+    eig, evec = np.linalg.eigh(S)
+    eig, evec = eig.real, evec.real
     print '[finished eig]... ', timer()-dt
-    print 'eig: ', eig[:100]
 
-    print '[begin svd]...'
-    dt = timer()
-    sval = np.linalg.svd(S, compute_uv=False)
-    print '[finished svd]... ', timer()-dt
-    print 'sval: ', sval[:100]
-
-    eps = sval.max() * N * np.finfo(np.float32).eps
-    print 'eps: ', eps
+    sval = eig
+    eps = sval.max() * S.shape[0] * np.finfo(np.float32).eps
     rank = (sval > eps).sum()
-    print 'rank: ', rank
 
-    print '[save back ckpt]...'
-    if not 'b' in ckpt:
-        ckpt['b'] = {}
-    if opt['b'] in ckpt['b']:
-        print 'found key: ', opt['b'], ' in ckpt[b], will overwrite'
-    ckpt['b'][opt['b']] = dict(eig=eig, sval=sval, rank=rank)
+    n = 1000
+    res = dict(eig=eig, evec=evec[:,:n], sval=sval, rank=rank)
+    th.save(res, f+'.eig.pz')
 
-    _ckpt = dict(eig=eig, sval=sval, rank=rank)
+if __name__ == '__main__':
+    if '*' in opt['i']:
+        print 'Found files: '
+        for f in sorted(glob2.glob(opt['i'] + '/*.pz')):
+            print f
 
-    th.save(_ckpt, f+'.eig.pz')
-    th.save(ckpt, f)
-
-if '*' in opt['i']:
-    print 'Found files: '
-    for f in sorted(glob2.glob(opt['i'] + '/*.pz')):
-        print f
-
-    print 'continue?'
-    raw_input()
-    for f in sorted(glob2.glob(opt['i'] + '/*.pz')):
-        helper(f)
-else:
-    helper(opt['i'])
+        print 'continue?'
+        raw_input()
+        for f in sorted(glob2.glob(opt['i'] + '/*.pz')):
+            if opt['stats']:
+                compute_stats(f)
+            else:
+                helper(f)
+    else:
+        if opt['stats']:
+            compute_stats(opt['i'])
+        else:
+            helper(opt['i'])
