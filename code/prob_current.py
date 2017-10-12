@@ -115,7 +115,7 @@ def train():
 
 def full_grad():
     model.train()
-    dwc = dw.clone()
+    dwc = dw.clone().zero_()
 
     opt['nb'] = len(train_data)
     for b, (x,y) in enumerate(train_data):
