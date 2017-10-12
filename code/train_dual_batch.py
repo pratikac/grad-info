@@ -32,7 +32,6 @@ opt = add_args([
 ['-l', False, 'log'],
 ['--no_microbn', False, 'no microbn'],
 ['--burnin', 5, 'burnin'],
-['--no_dual_batch', False, 'no dual_batch'],
 ['-v', False, 'verbose']
 ])
 
@@ -46,7 +45,7 @@ if opt['g'] >= th.cuda.device_count():
     model = nn.DataParallel(model).cuda()
 criterion = nn.CrossEntropyLoss().cuda()
 
-build_filename(opt, blacklist=['i', 'check', 'r', 'no_microbn', 'no_dual_batch', 'burnin'])
+build_filename(opt, blacklist=['i', 'check', 'r', 'no_microbn', 'burnin'])
 pprint(opt)
 
 dataset, augment = getattr(loader, opt['dataset'])(opt)
@@ -103,15 +102,9 @@ def train(e):
         b = 0
         opt['nb'] = len(train_data)
         train_iter = loaders[0]['train'].__iter__()
-        train_iter_128 = loaders_128[0]['train'].__iter__()
         for b in xrange(len(train_data)):
             x,y = next(train_iter)
-            x128, y128 = next(train_iter_128)
             _dt = timer()
-            if not opt['no_dual_batch']:
-                step(x128, y128, log=False, lr=opt['lr'])
-                #step(x128, y128, log=False, lr=min(opt['lr']*opt['b']/128.0, 0.1))
-                #step(x128, y128, log=False, lr=-min(opt['lr']*opt['b']/128.0, 0.1))
             step(x,y)
 
             if b % 5 == 0 and b > 0:
