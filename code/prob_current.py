@@ -118,7 +118,7 @@ try:
     for e in xrange(opt['B']):
         r = train()
 
-        if e > 200:
+        if e > 1000:
             fs.append(r['f'])
             top1s.append(r['top1'])
             ws.append(w.clone())
@@ -128,5 +128,5 @@ except KeyboardInterrupt:
 
 if opt['l']:
     print 'Saving...'
-    th.save(dict(w=th.cat(ws).view(-1,opt['np']), dw=th.cat(dws).view(-1,opt['np']),
+    th.save(dict(w=th.cat(ws).view(-1,opt['np']).t().numpy(), dw=th.cat(dws).view(-1,opt['np']).t().numpy(),
                 f=fs,top1=top1s), opt['filename'] + '_trajectory.pz')
