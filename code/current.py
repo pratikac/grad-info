@@ -35,11 +35,13 @@ opt = add_args([
 
 setup(opt)
 
+c = 16
+opt['num_classes'] = 2
 model = nn.Sequential(
-    nn.Linear(49,16),
-    nn.BatchNorm1d(16),
+    nn.Linear(49,c),
+    nn.BatchNorm1d(c),
     nn.ReLU(True),
-    nn.Linear(16,10)
+    nn.Linear(c,opt['num_classes'])
 )
 criterion = nn.CrossEntropyLoss()
 optimizer = th.optim.SGD(model.parameters(), lr=opt['lr'],
@@ -53,8 +55,8 @@ def get_data():
     x, y = dataset['train']['x'], dataset['train']['y']
 
     xs, ys = [], []
-    for i in xrange(10):
-        idx = (y==i).nonzero()[:opt['N']//10].squeeze()
+    for i in xrange(opt['num_classes']):
+        idx = (y==i).nonzero()[:opt['N']//opt['num_classes']].squeeze()
 
         tmp = []
         for ii in idx:
@@ -110,5 +112,9 @@ def train():
     print '+[%02d] %.3f %.3f%% %.2fs'%(e, r['f'], r['top1'], timer()-dt)
     return r
 
+ws = []
 for e in xrange(opt['B']):
     train()
+    ws.append(w)
+
+th.save(ws, 'current.pz')
