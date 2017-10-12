@@ -23,7 +23,8 @@ opt = add_args([
 ['--dataset', 'mnist', 'mnist'],
 ['--augment', False, 'augment'],
 ['-b', 128, 'batch_size'],
-['-B', 10000, 'max epochs'],
+['--nc', 4, 'num classes'],
+['-B', 100000, 'max epochs'],
 ['--lr', 0.1, 'lr'],
 ['--l2', 0.0, 'l2'],
 ['--lrs', '', 'lr schedule'],
@@ -35,19 +36,18 @@ opt = add_args([
 setup(opt)
 
 c = 16
-opt['num_classes'] = 2
-opt['N'] = 5000*opt['num_classes']
+opt['N'] = 512*opt['nc']
 model = nn.Sequential(
     nn.Linear(49,c),
     nn.BatchNorm1d(c),
     nn.ReLU(True),
-    nn.Linear(c,opt['num_classes'])
+    nn.Linear(c,opt['nc'])
 )
 criterion = nn.CrossEntropyLoss()
 optimizer = th.optim.SGD(model.parameters(), lr=opt['lr'],
             momentum=0.9, weight_decay=opt['l2'])
 
-build_filename(opt, blacklist=['i','augment','dataset','m','N','num_classes','b'])
+build_filename(opt, blacklist=['i','augment','dataset','m','N','nc','b'])
 pprint(opt)
 
 def get_data():
@@ -55,8 +55,8 @@ def get_data():
     x, y = dataset['train']['x'], dataset['train']['y']
 
     xs, ys = [], []
-    for i in xrange(opt['num_classes']):
-        idx = (y==i).nonzero()[:opt['N']//opt['num_classes']].squeeze()
+    for i in xrange(opt['nc']):
+        idx = (y==i).nonzero()[:opt['N']//opt['nc']].squeeze()
 
         tmp = []
         for ii in idx:
@@ -118,5 +118,6 @@ try:
         train()
         ws.append(w)
 except KeyboardInterrupt:
-    print 'Saving...'
-    th.save(ws, opt['filename'] + '_ws.pz')
+    if opt['l']:
+        print 'Saving...'
+        th.save(ws, opt['filename'] + '_ws.pz')
