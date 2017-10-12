@@ -81,7 +81,8 @@ for _, (x,y) in enumerate(train_data):
     _f.backward()
     break
 w, dw = flatten_params(model)
-print 'Num parameters: ', w.numel()
+opt['np'] = w.numel()
+print 'Num parameters: ', opt['np']
 
 def train():
     dt = timer()
@@ -112,16 +113,20 @@ def train():
     print '+[%02d] %.3f %.3f%% %.2fs\n'%(e, r['f'], r['top1'], timer()-dt)
     return r
 
-fs, top1s, ws = [], [], []
+fs, top1s, ws, dws = [], [], [], []
 try:
     for e in xrange(opt['B']):
         r = train()
-        fs.append(r['f'])
-        top1s.append(r['top1'])
-        ws.append(w)
+
+        if e > 200:
+            fs.append(r['f'])
+            top1s.append(r['top1'])
+            ws.append(w.clone())
+            dws.append(dw.clone())
 except KeyboardInterrupt:
     pass
 
 if opt['l']:
     print 'Saving...'
-    th.save(dict(w=ws,f=fs,top1=top1s), opt['filename'] + '_trajectory.pz')
+    th.save(dict(w=th.cat(ws).view(-1,opt['np']), dw=th.cat(dws).view(-1,opt['np']),
+                f=fs,top1=top1s), opt['filename'] + '_trajectory.pz')
