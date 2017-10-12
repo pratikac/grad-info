@@ -22,10 +22,9 @@ opt = add_args([
 ['-g', 0, 'gpu'],
 ['--dataset', 'mnist', 'mnist'],
 ['--augment', False, 'augment'],
-['-N', 1000, 'num images'],
-['-b', 10, 'batch_size'],
+['-b', 128, 'batch_size'],
 ['-B', 10000, 'max epochs'],
-['--lr', 0.01, 'lr'],
+['--lr', 0.1, 'lr'],
 ['--l2', 0.0, 'l2'],
 ['--lrs', '', 'lr schedule'],
 ['-s', 42, 'seed'],
@@ -37,6 +36,7 @@ setup(opt)
 
 c = 16
 opt['num_classes'] = 2
+opt['N'] = 5000*opt['num_classes']
 model = nn.Sequential(
     nn.Linear(49,c),
     nn.BatchNorm1d(c),
@@ -47,8 +47,8 @@ criterion = nn.CrossEntropyLoss()
 optimizer = th.optim.SGD(model.parameters(), lr=opt['lr'],
             momentum=0.9, weight_decay=opt['l2'])
 
-build_filename(opt, blacklist=['i'])
-# pprint(opt)
+build_filename(opt, blacklist=['i','augment','dataset','m','N','num_classes','b'])
+pprint(opt)
 
 def get_data():
     dataset, augment = getattr(loader, opt['dataset'])(opt)
@@ -109,12 +109,14 @@ def train():
         loss.add(f.data[0])
 
     r = dict(e=e, f=loss.value()[0], top1=top1.value()[0], train=True)
-    print '+[%02d] %.3f %.3f%% %.2fs'%(e, r['f'], r['top1'], timer()-dt)
+    print '+[%02d] %.3f %.3f%% %.2fs\n'%(e, r['f'], r['top1'], timer()-dt)
     return r
 
 ws = []
-for e in xrange(opt['B']):
-    train()
-    ws.append(w)
-
-th.save(ws, 'current.pz')
+try:
+    for e in xrange(opt['B']):
+        train()
+        ws.append(w)
+except KeyboardInterrupt:
+    print 'Saving...'
+    th.save(ws, opt['filename'] + '_ws.pz')
