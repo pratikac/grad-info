@@ -113,7 +113,23 @@ def train():
     print '+[%02d] %.3f %.3f%% %.2fs\n'%(e, r['f'], r['top1'], timer()-dt)
     return r
 
-fs, top1s, ws, dws = [], [], [], []
+def full_grad():
+    model.train()
+    dwc = dw.clone()
+
+    opt['nb'] = len(train_data)
+    for b, (x,y) in enumerate(train_data):
+        x,y = Variable(x), Variable(y)
+
+        model.zero_grad()
+        f = criterion(model(x), y)
+        f.backward()
+        dwc.add_(dw)
+
+    return dwc/float(opt['nb'])
+
+fs, top1s = [], []
+ws, dws, moms = [], [], []
 try:
     for e in xrange(opt['B']):
         r = train()
@@ -122,11 +138,15 @@ try:
             fs.append(r['f'])
             top1s.append(r['top1'])
             ws.append(w.clone())
-            dws.append(dw.clone())
+            dws.append(full_grad())
+
+            mom = th.cat([optimizer.state[p]['momentum_buffer'].view(-1) for p in model.parameters()])
+            moms.append(mom.clone())
 except KeyboardInterrupt:
     pass
 
 if opt['l']:
     print 'Saving...'
     th.save(dict(w=th.cat(ws).view(-1,opt['np']).t().numpy(), dw=th.cat(dws).view(-1,opt['np']).t().numpy(),
+                mom=th.cat(moms).view(-1,opt['np']).t().numpy(),
                 f=fs,top1=top1s), opt['filename'] + '_trajectory.pz')
