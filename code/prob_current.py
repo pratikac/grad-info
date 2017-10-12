@@ -112,12 +112,16 @@ def train():
     print '+[%02d] %.3f %.3f%% %.2fs\n'%(e, r['f'], r['top1'], timer()-dt)
     return r
 
-ws = []
+fs, top1s, ws = [], [], []
 try:
     for e in xrange(opt['B']):
-        train()
+        r = train()
+        fs.append(r['f'])
+        top1s.append(r['top1'])
         ws.append(w)
 except KeyboardInterrupt:
-    if opt['l']:
-        print 'Saving...'
-        th.save(ws, opt['filename'] + '_ws.pz')
+    pass
+
+if opt['l']:
+    print 'Saving...'
+    th.save(dict(w=ws,f=fs,top1=top1s), opt['filename'] + '_trajectory.pz')
