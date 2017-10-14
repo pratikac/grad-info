@@ -23,9 +23,8 @@ opt = add_args([
 ['--dataset', 'mnist', 'mnist'],
 ['--augment', False, 'augment'],
 ['-b', 128, 'batch_size'],
-['--nc', 2, 'num classes'],
-['--nh', 16, 'num hidden'],
-['--frac', 0.2, 'frac'],
+['--nc', 5, 'num classes'],
+['--frac', 1.0, 'frac'],
 ['-B', 100000, 'max epochs'],
 ['--lr', 0.1, 'lr'],
 ['--l2', 0.0, 'l2'],
@@ -37,17 +36,21 @@ opt = add_args([
 
 setup(opt)
 
-dataset, augment = loader.halfmnist(opt, 7, nc=opt['nc'])
+dataset, augment = loader.halfmnist(opt, 28, nc=opt['nc'])
 loaders = loader.get_loaders(dataset, augment, opt)
 train_data = loaders[0]['train']
+opt['N'] = int(len(loaders[0]['train_full'])*opt['frac'])
 
-model = nn.Sequential(
-    models.View(49),
-    nn.Linear(49,opt['nh']),
-    nn.BatchNorm1d(opt['nh']),
-    nn.ReLU(True),
-    nn.Linear(opt['nh'],opt['nc'])
-)
+# opt['nh'] = 16
+# model = nn.Sequential(
+#     models.View(49),
+#     nn.Linear(49,opt['nh']),
+#     nn.BatchNorm1d(opt['nh']),
+#     nn.ReLU(True),
+#     nn.Linear(opt['nh'],opt['nc'])
+# )
+model = models.lenett(opt)
+
 criterion = nn.CrossEntropyLoss()
 
 if opt['g'] >= 0:
@@ -56,7 +59,7 @@ if opt['g'] >= 0:
 optimizer = th.optim.SGD(model.parameters(), lr=opt['lr'],
             momentum=0.9, weight_decay=opt['l2'])
 
-build_filename(opt, blacklist=['i','augment','dataset','m','nc','b'])
+build_filename(opt, blacklist=['i','augment','dataset','m','nc','b','N','d','n'])
 pprint(opt)
 
 # dummy populate
@@ -108,6 +111,7 @@ def full_grad():
     model.train()
     dwc = dw.clone().zero_()
 
+    opt['nb'] = len(loaders[0]['train_full'])
     for b, (x,y) in enumerate(loaders[0]['train_full']):
         if opt['g'] >= 0:
             x, y = x.cuda(), y.cuda()
@@ -117,6 +121,9 @@ def full_grad():
         f = criterion(model(x), y)
         f.backward()
         dwc.add_(dw)
+
+        if b > opt['nb']:
+            break
 
     return dwc/float(opt['nb'])
 

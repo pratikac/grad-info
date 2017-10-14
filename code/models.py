@@ -107,13 +107,38 @@ class lenet(nn.Module):
     def forward(self, x):
         return self.m(x)
 
-class lenett(lenet):
+class lenett(nn.Module):
     name = 'lenett'
-    def __init__(self, opt, c1=4, c2=8, c3=16):
+    def __init__(self, opt, c1=4, c2=8):
         if (not 'd' in opt) or opt['d'] < 0:
             opt['d'] = 0.0
 
-        super(lenett, self).__init__(opt, c1, c2, c3)
+        super(lenett, self).__init__()
+
+        opt['l2'] = 0.
+        nc = opt.get('nc', 10)
+
+        def convbn(ci,co,ksz,psz,p):
+            return nn.Sequential(
+                nn.Conv2d(ci,co,ksz),
+                nn.BatchNorm2d(co),
+                nn.ReLU(True),
+                nn.MaxPool2d(psz,stride=psz),
+                nn.Dropout(p))
+
+        self.m = nn.Sequential(
+            convbn(1,c1,5,3,opt['d']),
+            convbn(c1,c2,5,2,opt['d']),
+            View(c2*2*2),
+            nn.Linear(c2*2*2, nc))
+
+        self.N = num_parameters(self.m)
+        s = '[%s] Num parameters: %d'%(self.name, self.N)
+        print(s)
+        logging.info(s)
+
+    def forward(self, x):
+        return self.m(x)
 
 class lenets(lenet):
     name = 'lenets'
