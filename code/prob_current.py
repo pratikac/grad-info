@@ -122,9 +122,6 @@ def full_grad():
         f.backward()
         dwc.add_(dw)
 
-        if b > opt['nb']:
-            break
-
     return dwc/float(opt['nb'])
 
 fs, top1s = [], []
