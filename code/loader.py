@@ -80,6 +80,32 @@ def get_loaders(d, transforms, opt):
             tr.append(get_inf_iterator(xy, transforms, opt['b'], nw=0, shuffle=True))
         return [dict(train=tr[i],val=tv,test=tv,train_full=trf,idx=idxs[i]) for i in xrange(opt['n'])]
 
+def halfmnist(opt, sz=7):
+    loc = home + '/local2/pratikac/mnist'
+    d1, d2 = datasets.MNIST(loc, train=True), datasets.MNIST(loc, train=False)
+
+    d = {'train': {'x': d1.train_data.view(-1,1,28,28).float(), 'y': d1.train_labels},
+        'val': {'x': d2.test_data.view(-1,1,28,28).float(), 'y': d2.test_labels}}
+    shuffle_data(d['train'])
+
+    txs, vxs = [], []
+
+    _txs = d['train']['x']
+    for i in xrange(len(_txs)):
+        t = transforms.ToPILImage()(_txs[i])
+        t = transforms.Scale(sz)(t)
+        txs.append(transforms.ToTensor()(t).view(-1,1,sz,sz))
+    d['train']['x'] = th.cat(txs)
+
+    _vxs = d['val']['x']
+    for i in xrange(len(_vxs)):
+        t = transforms.ToPILImage()(_vxs[i])
+        t = transforms.Scale(sz)(t)
+        vxs.append(transforms.ToTensor()(t).view(-1,1,sz,sz))
+    d['val']['x'] = th.cat(vxs)
+
+    return d, lambda x: x
+
 def mnist(opt):
     loc = home + '/local2/pratikac/mnist'
     d1, d2 = datasets.MNIST(loc, train=True), datasets.MNIST(loc, train=False)
