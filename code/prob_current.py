@@ -23,7 +23,7 @@ opt = add_args([
 ['--dataset', 'mnist', 'mnist'],
 ['--augment', False, 'augment'],
 ['-b', 128, 'batch_size'],
-['--nc', 4, 'num classes'],
+['--nc', 2, 'num classes'],
 ['--nh', 16, 'num hidden'],
 ['--frac', 0.2, 'frac'],
 ['-B', 100000, 'max epochs'],
@@ -37,7 +37,7 @@ opt = add_args([
 
 setup(opt)
 
-dataset, augment = loader.halfmnist(opt, 7)
+dataset, augment = loader.halfmnist(opt, 7, nc=opt['nc'])
 loaders = loader.get_loaders(dataset, augment, opt)
 train_data= loaders[0]['train']
 
@@ -47,8 +47,8 @@ model = nn.Sequential(
     nn.BatchNorm1d(opt['nh']),
     nn.ReLU(True),
     nn.Linear(opt['nh'],opt['nc'])
-)
-criterion = nn.CrossEntropyLoss()
+).cuda()
+criterion = nn.CrossEntropyLoss().cuda()
 optimizer = th.optim.SGD(model.parameters(), lr=opt['lr'],
             momentum=0.9, weight_decay=opt['l2'])
 
@@ -57,7 +57,7 @@ pprint(opt)
 
 # dummy populate
 for _, (x,y) in enumerate(train_data):
-    _f = criterion(model(Variable(x)), Variable(y))
+    _f = criterion(model(Variable(x.cuda())), Variable(y.cuda()))
     _f.backward()
     break
 w, dw = flatten_params(model)
@@ -77,7 +77,7 @@ def train():
 
     opt['nb'] = len(loaders[0]['train_full'])*opt['frac']
     for b, (x,y) in enumerate(train_data):
-        x,y = Variable(x), Variable(y)
+        x,y = Variable(x.cuda()), Variable(y.cuda())
 
         model.zero_grad()
         yh = model(x)
@@ -101,7 +101,7 @@ def full_grad():
     dwc = dw.clone().zero_()
 
     for b, (x,y) in enumerate(loaders[0]['train_full']):
-        x,y = Variable(x), Variable(y)
+        x,y = Variable(x.cuda()), Variable(y.cuda())
 
         model.zero_grad()
         f = criterion(model(x), y)
