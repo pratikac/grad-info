@@ -39,7 +39,7 @@ setup(opt)
 
 dataset, augment = loader.halfmnist(opt, 7, nc=opt['nc'])
 loaders = loader.get_loaders(dataset, augment, opt)
-train_data= loaders[0]['train']
+train_data = loaders[0]['train']
 
 model = nn.Sequential(
     models.View(49),
@@ -47,8 +47,12 @@ model = nn.Sequential(
     nn.BatchNorm1d(opt['nh']),
     nn.ReLU(True),
     nn.Linear(opt['nh'],opt['nc'])
-).cuda()
-criterion = nn.CrossEntropyLoss().cuda()
+)
+criterion = nn.CrossEntropyLoss()
+
+if opt['g'] >= 0:
+    model = model.cuda()
+    criterion = criterion.cuda()
 optimizer = th.optim.SGD(model.parameters(), lr=opt['lr'],
             momentum=0.9, weight_decay=opt['l2'])
 
@@ -57,7 +61,9 @@ pprint(opt)
 
 # dummy populate
 for _, (x,y) in enumerate(train_data):
-    _f = criterion(model(Variable(x.cuda())), Variable(y.cuda()))
+    if opt['g'] >= 0:
+        x, y = x.cuda(), y.cuda()
+    _f = criterion(model(Variable(x)), Variable(y))
     _f.backward()
     break
 w, dw = flatten_params(model)
@@ -77,7 +83,9 @@ def train():
 
     opt['nb'] = len(loaders[0]['train_full'])*opt['frac']
     for b, (x,y) in enumerate(train_data):
-        x,y = Variable(x.cuda()), Variable(y.cuda())
+        if opt['g'] >= 0:
+            x, y = x.cuda(), y.cuda()
+        x,y = Variable(x), Variable(y)
 
         model.zero_grad()
         yh = model(x)
@@ -101,7 +109,9 @@ def full_grad():
     dwc = dw.clone().zero_()
 
     for b, (x,y) in enumerate(loaders[0]['train_full']):
-        x,y = Variable(x.cuda()), Variable(y.cuda())
+        if opt['g'] >= 0:
+            x, y = x.cuda(), y.cuda()
+        x,y = Variable(x), Variable(y)
 
         model.zero_grad()
         f = criterion(model(x), y)
@@ -119,11 +129,11 @@ try:
         if e > 1000:
             fs.append(r['f'])
             top1s.append(r['top1'])
-            ws.append(w.clone())
-            dws.append(full_grad())
+            ws.append(w.clone().cpu())
+            dws.append(full_grad().cpu())
 
             mom = th.cat([optimizer.state[p]['momentum_buffer'].view(-1) for p in model.parameters()])
-            moms.append(mom.clone())
+            moms.append(mom.clone().cpu())
 except KeyboardInterrupt:
     pass
 
