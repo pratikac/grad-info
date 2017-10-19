@@ -142,7 +142,7 @@ class lenett(nn.Module):
 
 class lenets(lenet):
     name = 'lenets'
-    def __init__(self, opt, c1=8, c2=16, c3=32):
+    def __init__(self, opt, c1=8, c2=16, c3=128):
         if (not 'd' in opt) or opt['d'] < 0:
             opt['d'] = 0.0
 
