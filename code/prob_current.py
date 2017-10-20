@@ -137,10 +137,7 @@ except KeyboardInterrupt:
 
 if opt['l']:
     print 'Saving...'
-    loc = opt.get('o')
-    dirloc = os.path.join(loc, opt['m'], opt['filename'])
-    if not os.path.isdir(dirloc):
-        os.makedirs(dirloc)
+    dirloc = opt.get('o')
 
     r = gitrev(opt)
     th.save(dict(w=th.cat(ws).view(-1,opt['np']).t().numpy(), dw=th.cat(dws).view(-1,opt['np']).t().numpy(),
