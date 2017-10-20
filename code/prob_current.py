@@ -53,7 +53,7 @@ if opt['g'] >= 0:
 optimizer = th.optim.SGD(model.parameters(), lr=opt['lr'],
             momentum=0.9, weight_decay=opt['l2'])
 
-build_filename(opt, blacklist=['i','augment','dataset','m','nc','b','N','d','n'])
+build_filename(opt, blacklist=['i','augment','dataset','b','N','d','n'])
 pprint(opt)
 
 # dummy populate
@@ -124,7 +124,7 @@ try:
     for e in xrange(opt['B']):
         r = train()
 
-        if e > 1000:
+        if e > 10:
             fs.append(r['f'])
             top1s.append(r['top1'])
             ws.append(w.clone().cpu())
@@ -137,9 +137,15 @@ except KeyboardInterrupt:
 
 if opt['l']:
     print 'Saving...'
+    loc = opt.get('o')
+    dirloc = os.path.join(loc, opt['m'], opt['filename'])
+    if not os.path.isdir(dirloc):
+        os.makedirs(dirloc)
+
     r = gitrev(opt)
     th.save(dict(w=th.cat(ws).view(-1,opt['np']).t().numpy(), dw=th.cat(dws).view(-1,opt['np']).t().numpy(),
                 mom=th.cat(moms).view(-1,opt['np']).t().numpy(),
                 opt=opt,
                 meta=dict(SHA=r[0], STATUS=r[1], DIFF=r[2]),
-                f=fs,top1=top1s), opt['filename'] + '_trajectory.pz')
+                f=fs,top1=top1s),
+        os.path.join(dirloc, opt['filename'] + '_trajectory.pz'))
