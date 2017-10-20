@@ -72,7 +72,6 @@ def helper(f):
             _f = criterion(yh, y) + opt['l2']/2.*fw.norm()**2
             _f.backward()
 
-            print fdw.sum()
             grad.add_(fdw)
 
         grad.div_(len(_data))

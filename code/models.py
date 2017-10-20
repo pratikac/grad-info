@@ -107,6 +107,30 @@ class lenet(nn.Module):
     def forward(self, x):
         return self.m(x)
 
+class fclenett(nn.Module):
+    name = 'fclenett'
+    def __init__(self, opt, c=16):
+        super(fclenett, self).__init__()
+
+        opt['l2'] = 0.
+        nc = opt.get('nc', 10)
+
+        self.m = nn.Sequential(
+            View(49),
+            nn.Linear(49,c),
+            nn.BatchNorm1d(c),
+            nn.ReLU(True),
+            nn.Linear(c,opt['nc'])
+        )
+
+        self.N = num_parameters(self.m)
+        s = '[%s] Num parameters: %d'%(self.name, self.N)
+        print(s)
+        logging.info(s)
+
+    def forward(self, x):
+        return self.m(x)
+
 class lenett(nn.Module):
     name = 'lenett'
     def __init__(self, opt, c1=4, c2=8):

@@ -18,7 +18,7 @@ from copy import deepcopy
 
 opt = add_args([
 ['-o', '/home/%s/local2/pratikac/results'%os.environ['USER'], 'output'],
-['-m', 'lenett', 'lenett'],
+['-m', 'lenett', 'fclenett | lenett'],
 ['-g', 0, 'gpu'],
 ['--dataset', 'mnist', 'mnist'],
 ['--augment', False, 'augment'],
@@ -36,20 +36,14 @@ opt = add_args([
 
 setup(opt)
 
-dataset, augment = loader.halfmnist(opt, 28, nc=opt['nc'])
+model = getattr(models, opt['m'])(opt)
+if opt['m'] == 'fclenett':
+    dataset, augment = loader.halfmnist(opt, 7, nc=opt['nc'])
+else:
+    dataset, augment = loader.halfmnist(opt, 28, nc=opt['nc'])
 loaders = loader.get_loaders(dataset, augment, opt)
 train_data = loaders[0]['train']
 opt['N'] = int(len(loaders[0]['train_full'])*opt['frac'])
-
-# opt['nh'] = 16
-# model = nn.Sequential(
-#     models.View(49),
-#     nn.Linear(49,opt['nh']),
-#     nn.BatchNorm1d(opt['nh']),
-#     nn.ReLU(True),
-#     nn.Linear(opt['nh'],opt['nc'])
-# )
-model = models.lenett(opt)
 
 criterion = nn.CrossEntropyLoss()
 
@@ -143,6 +137,9 @@ except KeyboardInterrupt:
 
 if opt['l']:
     print 'Saving...'
+    r = gitrev(opt)
     th.save(dict(w=th.cat(ws).view(-1,opt['np']).t().numpy(), dw=th.cat(dws).view(-1,opt['np']).t().numpy(),
                 mom=th.cat(moms).view(-1,opt['np']).t().numpy(),
+                opt=opt,
+                meta=dict(SHA=r[0], STATUS=r[1], DIFF=r[2]),
                 f=fs,top1=top1s), opt['filename'] + '_trajectory.pz')
