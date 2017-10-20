@@ -40,6 +40,8 @@ def helper(f):
 
     model = getattr(models, opt['m'])(opt).cuda()
     model.load_state_dict(ckpt['state_dict'])
+    model.eval()
+
     criterion = nn.CrossEntropyLoss().cuda()
 
     dataset, augment = getattr(loader, opt['dataset'])(opt)
@@ -54,7 +56,6 @@ def helper(f):
 
     N = models.num_parameters(model)
     fw, fdw = flatten_params(model)
-    model.eval()
 
     def full_grad():
         _opt = deepcopy(opt)
@@ -68,8 +69,10 @@ def helper(f):
             x,y = Variable(x.cuda()), Variable(y.cuda())
             model.zero_grad()
             yh = model(x)
-            _f = criterion(model(x), y) + opt['l2']/2.*fw.norm()**2
+            _f = criterion(yh, y) + opt['l2']/2.*fw.norm()**2
             _f.backward()
+
+            print fdw.sum()
             grad.add_(fdw)
 
         grad.div_(len(_data))
@@ -88,7 +91,7 @@ def helper(f):
         x,y = Variable(x.cuda()), Variable(y.cuda())
         model.zero_grad()
         yh = model(x)
-        _f = criterion(model(x), y) + opt['l2']/2.*fw.norm()**2
+        _f = criterion(yh, y) + opt['l2']/2.*fw.norm()**2
         _f.backward()
 
         tmp = fdw.clone().add_(-1, fgrad)
