@@ -124,7 +124,7 @@ try:
     for e in xrange(opt['B']):
         r = train()
 
-        if e > 10:
+        if e > 1000:
             fs.append(r['f'])
             top1s.append(r['top1'])
             ws.append(w.clone().cpu())
