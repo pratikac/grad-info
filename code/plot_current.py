@@ -49,6 +49,9 @@ def cuda_fft(x):
 d = th.load(opt['i'])
 
 if opt['f']:
+    print 'Force: '%opt['f']
+    print 'Will rewrite...'
+
     d['ddw'] = d['w'][:,1:] - d['w'][:,:-1]
     d['mom_avg'] = (d['mom'][:,1:] + d['mom'][:,:-1])/2.
     d['cth'] = (d['ddw']*d['mom_avg'])/(np.linalg.norm(d['ddw'], axis=0)*np.linalg.norm(d['mom_avg'], axis=0))
@@ -68,14 +71,20 @@ if opt['f']:
     raw_input()
     th.save(d, opt['i'])
 
-plt.figure(1)
+plt.figure(1, figsize=(8,7))
 plt.clf()
 
-# plt.loglog(d['freq'][:1000], d['p'][100][:1000],'k')
-
-sns.tsplot(time=d['freq'][:1000], data=d['p'][:,:1000], ci=[68,95])
+idx = range(500)
+sns.tsplot(time=d['freq'][idx], data=d['pdw'][:,idx], color='k')
 plt.xscale('log')
-plt.yscale('log')
-plt.xlim([1e-5,1e-2])
+
+plt.xlim([1e-5, 2e-2])
+plt.ylim([0, 0.15])
+plt.yticks([0, 0.05, 0.1, 0.15])
+
+plt.title('FFT of dx(t)')
+plt.xlabel('frequency (1/epoch)')
+plt.ylabel('amplitude')
 
 plt.grid()
+# plt.savefig('../fig/fft_fcnet.pdf', bbox_inches='tight')

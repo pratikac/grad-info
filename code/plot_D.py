@@ -97,8 +97,8 @@ def lenets():
 
     plt.grid()
 
-    plt.xlabel('Eigenvalue')
-    plt.ylabel('Frequency')
+    plt.xlabel('eigenvalues')
+    plt.ylabel('frequency')
 
     if opt['s']:
         plt.savefig('../fig/lenets_D.pdf', bbox_inches='tight')
@@ -143,8 +143,8 @@ def cifar10():
 
     plt.grid()
 
-    plt.xlabel('Eigenvalue')
-    plt.ylabel('Frequency')
+    plt.xlabel('eigenvalues')
+    plt.ylabel('frequency')
 
     if opt['s']:
         plt.savefig('../fig/allcnns_cifar10_D.pdf', bbox_inches='tight')
@@ -187,8 +187,8 @@ def cifar100():
 
     plt.grid()
 
-    plt.xlabel('Eigenvalue')
-    plt.ylabel('Frequency')
+    plt.xlabel('eigenvalues')
+    plt.ylabel('frequency')
 
     if opt['s']:
         plt.savefig('../fig/allcnns_cifar100_D.pdf', bbox_inches='tight')
