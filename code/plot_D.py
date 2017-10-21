@@ -21,7 +21,7 @@ parser.add_argument('-s',
             action='store_true')
 opt = vars(parser.parse_args())
 
-fsz = 24
+fsz = 32
 plt.rc('font', size=fsz)
 plt.rc('axes', titlesize=fsz)
 plt.rc('axes', labelsize=fsz)
@@ -89,10 +89,10 @@ def lenets():
     plt.yscale('symlog')
 
     plt.xlim([0, 0.04])
-    plt.ylim([1, 1e4])
+    plt.ylim([0, 1e4])
 
     plt.xticks([0, 0.02, 0.04])
-    plt.yticks([1, 10**2, 10**4])
+    plt.yticks([0, 10**2, 10**4])
 
     plt.grid()
 
@@ -100,7 +100,7 @@ def lenets():
     plt.ylabel('Frequency')
 
     if opt['s']:
-        plt.savefig('../fig/lenetsD.pdf', bbox_inches='tight')
+        plt.savefig('../fig/lenets_D.pdf', bbox_inches='tight')
 
 
 def cifar10():
@@ -110,8 +110,8 @@ def cifar10():
     plt.figure(2, figsize=(8,8))
     plt.clf()
 
-    bins = np.logspace(-3, 1, 20)
-    idxs = [0, 1, 3, 5]
+    bins = 100
+    idxs = [1, 2, 5]
     for ii,di in enumerate(d):
         if ii not in idxs:
             continue
@@ -129,20 +129,21 @@ def cifar10():
                 hist_kws=dict(histtype='step', alpha=1, edgecolor=ec, linewidth=lw)
                 )
 
-    plt.xscale('log')
-    plt.yscale('log')
-    # plt.xlim([1e-3, 1])
-    # plt.ylim([1, 1e3])
+    plt.yscale('symlog')
 
-    # plt.xticks(np.logspace(-3, 0, 4))
-    # plt.yticks(np.logspace(0, 3, 4))
+    plt.xlim([0, 10])
+    plt.ylim([0, 1e4])
+
+    plt.xticks([0, 5, 10])
+    plt.yticks([0, 10**2, 10**4])
 
     plt.grid()
 
     plt.xlabel('Eigenvalue')
     plt.ylabel('Frequency')
 
-
+    if opt['s']:
+        plt.savefig('../fig/allcnns_cifar10_D.pdf', bbox_inches='tight')
 
 lenets()
-# cifar10()
+cifar10()
