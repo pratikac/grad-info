@@ -40,6 +40,8 @@ def helper(f):
 
     model = getattr(models, opt['m'])(opt).cuda()
     model.load_state_dict(ckpt['state_dict'])
+    model.eval()
+
     criterion = nn.CrossEntropyLoss().cuda()
 
     dataset, augment = getattr(loader, opt['dataset'])(opt)
@@ -54,7 +56,6 @@ def helper(f):
 
     N = models.num_parameters(model)
     fw, fdw = flatten_params(model)
-    model.eval()
 
     def full_grad():
         _opt = deepcopy(opt)
@@ -68,12 +69,15 @@ def helper(f):
             x,y = Variable(x.cuda()), Variable(y.cuda())
             model.zero_grad()
             yh = model(x)
-            _f = criterion(model(x), y) + opt['l2']/2.*fw.norm()**2
+            _f = criterion(yh, y) + opt['l2']/2.*fw.norm()**2
             _f.backward()
+
             grad.add_(fdw)
 
         grad.div_(len(_data))
         return grad
+
+    print 'S: ', f+'.S_augment_%s.pz'%(opt['augment'])
 
     print '[computing full grad]'
     fgrad = full_grad()
@@ -88,7 +92,7 @@ def helper(f):
         x,y = Variable(x.cuda()), Variable(y.cuda())
         model.zero_grad()
         yh = model(x)
-        _f = criterion(model(x), y) + opt['l2']/2.*fw.norm()**2
+        _f = criterion(yh, y) + opt['l2']/2.*fw.norm()**2
         _f.backward()
 
         tmp = fdw.clone().add_(-1, fgrad)
@@ -98,7 +102,7 @@ def helper(f):
             print '[%d] %.2fs'%(b, timer()-_dt)
 
     S.div_(opt['nb'])
-    fn = f+'.S.pz'
+    fn = f+'.S_augment_%s.pz'%(opt['augment'])
     res = dict(opt=opt, S=S.cpu(), fgrad=fgrad.cpu())
     th.save(res, fn)
 

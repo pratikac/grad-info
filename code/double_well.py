@@ -47,4 +47,5 @@ for i in range(len(ls)):
     plt.yticks([-1,0,1])
     plt.plot([-1,1],[0,0], 'ro', ms=20)
     plt.axes().set_aspect('equal')
+    plt.contourf(x, y, phi, levels=np.linspace(phi.min(), phi.max(), 6), cmap=cm.Blues, alpha=0.25)
     plt.savefig('../fig/double_well%d.pdf'%(i+1), bbox_inches='tight')

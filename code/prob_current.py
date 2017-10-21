@@ -18,7 +18,7 @@ from copy import deepcopy
 
 opt = add_args([
 ['-o', '/home/%s/local2/pratikac/results'%os.environ['USER'], 'output'],
-['-m', 'lenett', 'lenett'],
+['-m', 'lenett', 'fclenett | lenett'],
 ['-g', 0, 'gpu'],
 ['--dataset', 'mnist', 'mnist'],
 ['--augment', False, 'augment'],
@@ -26,6 +26,7 @@ opt = add_args([
 ['--nc', 5, 'num classes'],
 ['--frac', 1.0, 'frac'],
 ['-B', 100000, 'max epochs'],
+['--burnin', 10, 'burnin epochs'],
 ['--lr', 0.1, 'lr'],
 ['--l2', 0.0, 'l2'],
 ['--lrs', '', 'lr schedule'],
@@ -36,20 +37,14 @@ opt = add_args([
 
 setup(opt)
 
-dataset, augment = loader.halfmnist(opt, 28, nc=opt['nc'])
+model = getattr(models, opt['m'])(opt)
+if opt['m'] == 'fclenett':
+    dataset, augment = loader.halfmnist(opt, 7, nc=opt['nc'])
+else:
+    dataset, augment = loader.halfmnist(opt, 28, nc=opt['nc'])
 loaders = loader.get_loaders(dataset, augment, opt)
 train_data = loaders[0]['train']
 opt['N'] = int(len(loaders[0]['train_full'])*opt['frac'])
-
-# opt['nh'] = 16
-# model = nn.Sequential(
-#     models.View(49),
-#     nn.Linear(49,opt['nh']),
-#     nn.BatchNorm1d(opt['nh']),
-#     nn.ReLU(True),
-#     nn.Linear(opt['nh'],opt['nc'])
-# )
-model = models.lenett(opt)
 
 criterion = nn.CrossEntropyLoss()
 
@@ -59,7 +54,7 @@ if opt['g'] >= 0:
 optimizer = th.optim.SGD(model.parameters(), lr=opt['lr'],
             momentum=0.9, weight_decay=opt['l2'])
 
-build_filename(opt, blacklist=['i','augment','dataset','m','nc','b','N','d','n'])
+build_filename(opt, blacklist=['i','augment','dataset','b','N','d','n','burnin', 'frac', 'nc'])
 pprint(opt)
 
 # dummy populate
@@ -73,7 +68,7 @@ w, dw = flatten_params(model)
 opt['np'] = w.numel()
 print 'Num parameters: ', opt['np']
 
-def train():
+def train(e):
     dt = timer()
 
     opt['lr'] = lrschedule(opt, e)
@@ -85,6 +80,8 @@ def train():
     top1 = tnt.meter.ClassErrorMeter()
 
     opt['nb'] = len(loaders[0]['train_full'])*opt['frac']
+    ws, dws, moms = [], [], []
+
     for b, (x,y) in enumerate(train_data):
         if opt['g'] >= 0:
             x, y = x.cuda(), y.cuda()
@@ -100,12 +97,18 @@ def train():
         top1.add(yh.data, y.data)
         loss.add(f.data[0])
 
+        if e > opt['burnin']:
+            ws.append(w.clone().cpu())
+            dws.append(dw.clone().cpu())
+            mom = th.cat([optimizer.state[p]['momentum_buffer'].view(-1) for p in model.parameters()])
+            moms.append(mom.clone().cpu())
+
         if b > opt['nb']:
             break
 
     r = dict(e=e, f=loss.value()[0], top1=top1.value()[0], train=True)
     print '+[%02d] %.3f %.3f%% %.2fs\n'%(e, r['f'], r['top1'], timer()-dt)
-    return r
+    return r, dict(w=ws,dw=dws,mom=moms)
 
 def full_grad():
     model.train()
@@ -125,24 +128,34 @@ def full_grad():
     return dwc/float(opt['nb'])
 
 fs, top1s = [], []
-ws, dws, moms = [], [], []
+ws, dws, moms, full_dws = [], [], [], []
 try:
     for e in xrange(opt['B']):
-        r = train()
+        r, cc = train(e)
 
-        if e > 1000:
+        # fdw = full_grad()
+        # print fdw.norm()
+
+        if e > opt['burnin']:
             fs.append(r['f'])
             top1s.append(r['top1'])
-            ws.append(w.clone().cpu())
-            dws.append(full_grad().cpu())
-
-            mom = th.cat([optimizer.state[p]['momentum_buffer'].view(-1) for p in model.parameters()])
-            moms.append(mom.clone().cpu())
+            ws.append(th.cat(cc['w']).view(-1,opt['np']))
+            dws.append(th.cat(cc['dw']).view(-1,opt['np']))
+            moms.append(th.cat(cc['mom']).view(-1,opt['np']))
+            full_dws.append(full_grad())
 except KeyboardInterrupt:
     pass
 
 if opt['l']:
     print 'Saving...'
-    th.save(dict(w=th.cat(ws).view(-1,opt['np']).t().numpy(), dw=th.cat(dws).view(-1,opt['np']).t().numpy(),
+    dirloc = opt.get('o')
+
+    r = gitrev(opt)
+    th.save(dict(w=th.cat(ws).view(-1,opt['np']).t().numpy(),
+                dw=th.cat(dws).view(-1,opt['np']).t().numpy(),
+                full_dw=th.cat(full_dws).view(-1,opt['np']).t().numpy(),
                 mom=th.cat(moms).view(-1,opt['np']).t().numpy(),
-                f=fs,top1=top1s), opt['filename'] + '_trajectory.pz')
+                opt=opt,
+                meta=dict(SHA=r[0], STATUS=r[1], DIFF=r[2]),
+                f=fs,top1=top1s),
+        os.path.join(dirloc, opt['filename'] + '_trajectory.pz'))
