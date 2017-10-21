@@ -8,7 +8,7 @@ sns.set_color_codes()
 
 plt.ion()
 
-fsz = 18
+fsz = 24
 plt.rc('font', size=fsz)
 plt.rc('axes', titlesize=fsz)
 plt.rc('axes', labelsize=fsz)
@@ -17,7 +17,7 @@ plt.rc('ytick', labelsize=fsz)
 plt.rc('legend', fontsize=fsz)
 plt.rc('figure', titlesize=fsz)
 
-ls = [100]
+ls = [0,0.5,1.5]
 
 for i in range(len(ls)):
     l = ls[i]
@@ -39,11 +39,12 @@ for i in range(len(ls)):
     # u /= s
     # v /= s
 
-    plt.streamplot(x,y,u,v, density=0.5, color='k', linewidth=5*s / s.max())
+    plt.streamplot(x,y,u,v, density=0.5, color='k', linewidth=7*s / s.max())
     plt.grid()
     plt.xlim([-1.5, 1.5])
     plt.ylim([-1.5, 1.5])
     plt.xticks([-1,0,1])
     plt.yticks([-1,0,1])
+    plt.plot([-1,1],[0,0], 'ro', ms=20)
     plt.axes().set_aspect('equal')
-    # plt.savefig('../fig/double_well%d.pdf'%(i+1), bbox_inches='tight')
+    plt.savefig('../fig/double_well%d.pdf'%(i+1), bbox_inches='tight')
