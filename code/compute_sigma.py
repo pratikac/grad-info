@@ -77,6 +77,8 @@ def helper(f):
         grad.div_(len(_data))
         return grad
 
+    print 'S: ', f+'.S_augment_%s.pz'%(opt['augment'])
+
     print '[computing full grad]'
     fgrad = full_grad()
 
@@ -100,7 +102,7 @@ def helper(f):
             print '[%d] %.2fs'%(b, timer()-_dt)
 
     S.div_(opt['nb'])
-    fn = f+'.S.pz'
+    fn = f+'.S_augment_%s.pz'%(opt['augment'])
     res = dict(opt=opt, S=S.cpu(), fgrad=fgrad.cpu())
     th.save(res, fn)
 

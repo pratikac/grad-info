@@ -5,7 +5,6 @@ import os, sys, glob, pdb, argparse
 import cPickle as pickle
 import seaborn as sns
 import torch as th
-import pytorch_fft.fft as fft
 
 sns.set_style('ticks')
 sns.set_color_codes()
@@ -40,6 +39,8 @@ assert not opt['i'] == ''
 
 
 def cuda_fft(x):
+    import pytorch_fft.fft as fft
+
     xr, ximg = fft.rfft(th.from_numpy(x).cuda())
     p = (xr**2 + ximg**2)**0.5
     freq = np.fft.rfftfreq(x.shape[1])
@@ -59,21 +60,22 @@ if opt['f']:
     print 'Start FFT'
     d['p'], d['freq'] = cuda_fft(d['w'])
     d['pdw'], _ = cuda_fft(d['ddw'])
+    d['pdw_par'], _ = cuda_fft(d['ddw_par'])
+    d['pdw_perp'], _ = cuda_fft(d['ddw_perp'])
 
     print 'Saving: ', opt['i']
-
     print 'Continue?'
     raw_input()
     th.save(d, opt['i'])
 
-# plt.figure(1)
-# plt.clf()
+plt.figure(1)
+plt.clf()
 
-# # plt.loglog(d['freq'][:1000], d['p'][100][:1000],'k')
+# plt.loglog(d['freq'][:1000], d['p'][100][:1000],'k')
 
-# sns.tsplot(time=d['freq'][:1000], data=d['p'][:,:1000], ci=[68,95])
-# plt.xscale('log')
-# plt.yscale('log')
-# plt.xlim([1e-5,1e-2])
+sns.tsplot(time=d['freq'][:1000], data=d['p'][:,:1000], ci=[68,95])
+plt.xscale('log')
+plt.yscale('log')
+plt.xlim([1e-5,1e-2])
 
-# plt.grid()
+plt.grid()
