@@ -5,6 +5,7 @@ import os, sys, glob, pdb, argparse
 import cPickle as pickle
 import seaborn as sns
 import torch as th
+from future.utils import lmap
 
 sns.set_style('ticks')
 sns.set_color_codes()
@@ -46,10 +47,32 @@ def cuda_fft(x):
     freq = np.fft.rfftfreq(x.shape[1])
     return p.cpu().numpy(), freq
 
+
+def xcorr(x):
+    """FFT based autocorrelation function, which is faster than numpy.correlate"""
+    # x is supposed to be an array of sequences, of shape (totalelements, length)
+
+    fftx = np.fft.fft(x, axis=1)
+    ret = np.fft.ifft(fftx*np.conjugate(fftx), axis=1).real
+    ret = np.fft.fftshift(ret, axes=1)
+    return ret
+
+def autocorrelation(x):
+    n = len(x)
+    mean = np.mean(x)
+    c0 = np.sum((x - mean) ** 2) / float(n)
+
+    def r(h):
+        return ((x[:n - h] - mean) *
+                (x[h:] - mean)).sum() / float(n) / c0
+
+    lag = np.arange(0,n,n//100)
+    y = lmap(r, lag)
+    return lag, y
+
 d = th.load(opt['i'])
 
 if opt['f']:
-    print 'Force: '%opt['f']
     print 'Will rewrite: ', opt['i']
 
     d['ddw'] = d['w'][:,1:] - d['w'][:,:-1]
@@ -75,16 +98,16 @@ plt.figure(1, figsize=(8,7))
 plt.clf()
 
 idx = range(500)
-sns.tsplot(time=d['freq'][idx], data=d['pdw'][:,idx], color='k')
+sns.tsplot(time=d['freq'][idx], data=d['p'][:,idx], color='k')
 plt.xscale('log')
 
-plt.xlim([1e-5, 2e-2])
-plt.ylim([0, 0.15])
-plt.yticks([0, 0.05, 0.1, 0.15])
+# plt.xlim([1e-5, 2e-2])
+# plt.ylim([0, 0.15])
+# plt.yticks([0, 0.05, 0.1, 0.15])
 
-plt.title('FFT of dx(t)')
-plt.xlabel('frequency (1/epoch)')
-plt.ylabel('amplitude')
+# plt.title('FFT of dx(t)')
+# plt.xlabel('frequency (1/epoch)')
+# plt.ylabel('amplitude')
 
-plt.grid()
+# plt.grid()
 # plt.savefig('../fig/fft_fcnet.pdf', bbox_inches='tight')
