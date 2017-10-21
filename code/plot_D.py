@@ -30,7 +30,7 @@ plt.rc('ytick', labelsize=fsz)
 plt.rc('legend', fontsize=fsz)
 plt.rc('figure', titlesize=fsz)
 
-alphas = np.logspace(-1, -0.1, 6)
+alphas = np.logspace(-1, -0.2, 6)
 
 def set_ticks(xt=[], xts=[], yt=[], yts=[]):
     if len(xt):
@@ -67,7 +67,7 @@ def lenets():
     plt.figure(1, figsize=(8,8))
     plt.clf()
 
-    bins = 60
+    bins = np.logspace(-10, -1, 10)
     idxs = [1, 2, 5]
     for ii,di in enumerate(d):
         if ii not in idxs:
@@ -79,20 +79,21 @@ def lenets():
             hist_kws=dict(alpha=alphas[ii], edgecolor=ec, linewidth=lw)
             )
 
-        if alphas[ii] < 0.3:
+        if alphas[ii] < 0.5:
             lw, ec = 1, 'k'
             sns.distplot(d[ii]['eig'], bins=bins,
                 kde=False, color='k',
                 hist_kws=dict(histtype='step', alpha=1, edgecolor=ec, linewidth=lw)
                 )
 
-    plt.yscale('symlog')
+    plt.xscale('log')
+    plt.yscale('log')
 
-    plt.xlim([0, 0.04])
-    plt.ylim([0, 1e4])
+    plt.xlim([1e-10, 0.1])
+    plt.ylim([0, 1e5])
 
-    plt.xticks([0, 0.02, 0.04])
-    plt.yticks([0, 10**2, 10**4])
+    plt.xticks(np.logspace(-10, -1, 4))
+    plt.yticks([1, 1e2, 1e4])
 
     plt.grid()
 
@@ -104,38 +105,41 @@ def lenets():
 
 
 def cifar10():
+
     loc = 'allcnns/(Sep_08_02_44_57)_opt_{"b":128,"dataset":"cifar10","m":"allcnns","s":42}'
+    # loc = 'allcnns/(Oct_20_21_47_33)_opt_{"b":128,"d":0.0,"dataset":"cifar10","m":"allcnns","s":42}'
     d = loaddir(os.path.join(opt['l'], loc), force=opt['f'])
 
     plt.figure(2, figsize=(8,8))
     plt.clf()
 
-    bins = 100
-    idxs = [1, 2, 5]
+    bins = np.logspace(-15, 2, 15)
+    idxs = [1,2,5]
     for ii,di in enumerate(d):
         if ii not in idxs:
             continue
 
-        lw, ec = 3, 'w'
+        lw, ec = 2, 'w'
         sns.distplot(d[ii]['eig'], bins=bins,
             kde=False, color='k',
             hist_kws=dict(alpha=alphas[ii], edgecolor=ec, linewidth=lw)
             )
 
-        if alphas[ii] < 0.3:
+        if alphas[ii] < 0.5:
             lw, ec = 1, 'k'
             sns.distplot(d[ii]['eig'], bins=bins,
                 kde=False, color='k',
                 hist_kws=dict(histtype='step', alpha=1, edgecolor=ec, linewidth=lw)
                 )
 
-    plt.yscale('symlog')
+    plt.xscale('log')
+    plt.yscale('log')
 
-    plt.xlim([0, 10])
-    plt.ylim([0, 1e4])
+    plt.xlim([1e-12, 1])
+    plt.ylim([0, 1e5])
 
-    plt.xticks([0, 5, 10])
-    plt.yticks([0, 10**2, 10**4])
+    plt.xticks(np.logspace(-12, 0, 4))
+    plt.yticks([1, 1e2, 1e4])
 
     plt.grid()
 
@@ -145,5 +149,51 @@ def cifar10():
     if opt['s']:
         plt.savefig('../fig/allcnns_cifar10_D.pdf', bbox_inches='tight')
 
+
+def cifar100():
+    loc = 'allcnns/(Sep_08_02_45_19)_opt_{"b":128,"dataset":"cifar100","m":"allcnns","s":42}'
+    d = loaddir(os.path.join(opt['l'], loc), force=opt['f'])
+
+    plt.figure(3, figsize=(8,8))
+    plt.clf()
+
+    bins = np.logspace(-15, 2, 15)
+    idxs = [1, 2, 5]
+    for ii,di in enumerate(d):
+        if ii not in idxs:
+            continue
+
+        lw, ec = 2, 'w'
+        sns.distplot(d[ii]['eig'], bins=bins,
+            kde=False, color='k',
+            hist_kws=dict(alpha=alphas[ii], edgecolor=ec, linewidth=lw)
+            )
+
+        if alphas[ii] < 0.5:
+            lw, ec = 1, 'k'
+            sns.distplot(d[ii]['eig'], bins=bins,
+                kde=False, color='k',
+                hist_kws=dict(histtype='step', alpha=1, edgecolor=ec, linewidth=lw)
+                )
+
+    plt.xscale('log')
+    plt.yscale('log')
+
+    plt.xlim([1e-12, 1])
+    plt.ylim([0, 1e5])
+
+    plt.xticks(np.logspace(-12, 0, 4))
+    plt.yticks([1, 1e2, 1e4])
+
+    plt.grid()
+
+    plt.xlabel('Eigenvalue')
+    plt.ylabel('Frequency')
+
+    if opt['s']:
+        plt.savefig('../fig/allcnns_cifar100_D.pdf', bbox_inches='tight')
+
+
 lenets()
 cifar10()
+cifar100()
