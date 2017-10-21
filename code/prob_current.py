@@ -67,7 +67,7 @@ w, dw = flatten_params(model)
 opt['np'] = w.numel()
 print 'Num parameters: ', opt['np']
 
-def train():
+def train(e):
     dt = timer()
 
     opt['lr'] = lrschedule(opt, e)
@@ -79,6 +79,8 @@ def train():
     top1 = tnt.meter.ClassErrorMeter()
 
     opt['nb'] = len(loaders[0]['train_full'])*opt['frac']
+    ws, dws, moms = [], [], []
+
     for b, (x,y) in enumerate(train_data):
         if opt['g'] >= 0:
             x, y = x.cuda(), y.cuda()
@@ -94,12 +96,18 @@ def train():
         top1.add(yh.data, y.data)
         loss.add(f.data[0])
 
+        if e > 1000:
+            ws.append(w.clonne().cpu())
+            dws.append(dw.clone().cpu())
+            mom = th.cat([optimizer.state[p]['momentum_buffer'].view(-1) for p in model.parameters()])
+            moms.append(mom.clone().cpu())
+
         if b > opt['nb']:
             break
 
     r = dict(e=e, f=loss.value()[0], top1=top1.value()[0], train=True)
     print '+[%02d] %.3f %.3f%% %.2fs\n'%(e, r['f'], r['top1'], timer()-dt)
-    return r
+    return r, dict(w=ws,dw=dws,mom=moms)
 
 def full_grad():
     model.train()
@@ -122,16 +130,14 @@ fs, top1s = [], []
 ws, dws, moms = [], [], []
 try:
     for e in xrange(opt['B']):
-        r = train()
+        r, cc = train(e)
 
         if e > 1000:
             fs.append(r['f'])
             top1s.append(r['top1'])
-            ws.append(w.clone().cpu())
-            dws.append(full_grad().cpu())
-
-            mom = th.cat([optimizer.state[p]['momentum_buffer'].view(-1) for p in model.parameters()])
-            moms.append(mom.clone().cpu())
+            ws.append(cc['w'])
+            dws.append(cc['dw'])
+            moms.append(cc['mom'])
 except KeyboardInterrupt:
     pass
 

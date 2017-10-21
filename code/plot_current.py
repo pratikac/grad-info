@@ -50,7 +50,7 @@ d = th.load(opt['i'])
 
 if opt['f']:
     print 'Force: '%opt['f']
-    print 'Will rewrite...'
+    print 'Will rewrite: ', opt['i']
 
     d['ddw'] = d['w'][:,1:] - d['w'][:,:-1]
     d['mom_avg'] = (d['mom'][:,1:] + d['mom'][:,:-1])/2.
