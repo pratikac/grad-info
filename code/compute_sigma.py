@@ -113,7 +113,7 @@ def compute_stats(f):
     d = th.load(fn)
     S, fgrad = d['S'].numpy(), d['fgrad'].numpy()
     S2 = np.outer(fgrad, fgrad)
-    S1 = S - S2
+    S1 = S + S2
 
     print '[begin eig]...'
     dt = timer()
