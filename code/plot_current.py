@@ -17,7 +17,7 @@ p.add_argument('-i', type=str, default='', help='location')
 p.add_argument('-f', help='force', action='store_true')
 opt = vars(p.parse_args())
 
-fsz = 24
+fsz = 32
 plt.rc('font', size=fsz)
 plt.rc('axes', titlesize=fsz)
 plt.rc('axes', labelsize=fsz)
@@ -35,9 +35,6 @@ def set_ticks(xt=[], xts=[], yt=[], yts=[]):
         if not len(yts):
             yts = [str(s) for s in yt]
         plt.yticks(yt, yts)
-
-assert not opt['i'] == ''
-
 
 def cuda_fft(x):
     import pytorch_fft.fft as fft
@@ -70,9 +67,9 @@ def autocorrelation(x):
     y = lmap(r, lag)
     return lag, y
 
-d = th.load(opt['i'])
-
 if opt['f']:
+    d = th.load(opt['i'])
+
     print 'Will rewrite: ', opt['i']
 
     d['ddw'] = d['w'][:,1:] - d['w'][:,:-1]
@@ -81,6 +78,20 @@ if opt['f']:
     d['ddw_par'] = d['ddw']*d['cth']
     d['sth'] = (1-d['cth']**2)**0.5
     d['ddw_perp'] = d['ddw']*d['sth']
+
+    print 'Start autocorrelation:'
+    d['lag'], _ = autocorrelation(d['w'][0])
+    d['ac'] = []
+    for i in xrange(d['w'].shape[0]):
+        _, ac = autocorrelation(d['w'][i])
+        d['ac'].append(ac)
+        if i % 10:
+            print i
+    d['ac'] = np.array(d['ac'])
+
+    # keys = ['lag', 'ac', 'w', 'dw','freq']
+    # th.save( {k:v for k,v in d.items() if k in d and k in keys}, opt['i']+'_ac.pz')
+    # sys.exit(0)
 
     # if not 'freq' in d:
     print 'Start FFT'
@@ -93,21 +104,92 @@ if opt['f']:
     print 'Continue?'
     raw_input()
     th.save(d, opt['i'])
+    sys.exit(0)
 
-plt.figure(1, figsize=(8,7))
-plt.clf()
+def plot_fft():
+    d = th.load('/Users/pratik/Dropbox/iclr18data/traj/(Oct_12_01_41_39)_opt_{"s":42}_trajectory_extra.pz')
 
-idx = range(500)
-sns.tsplot(time=d['freq'][idx], data=d['p'][:,idx], color='k')
-plt.xscale('log')
+    plt.figure(1, figsize=(8,7))
+    plt.clf()
 
-# plt.xlim([1e-5, 2e-2])
-# plt.ylim([0, 0.15])
-# plt.yticks([0, 0.05, 0.1, 0.15])
+    idx = range(1000)
+    sns.tsplot(time=d['freq'][idx], data=d['pdw'][:,idx], color='k')
+    plt.xscale('log')
 
-# plt.title('FFT of dx(t)')
-# plt.xlabel('frequency (1/epoch)')
-# plt.ylabel('amplitude')
+    plt.xlim([1e-5, 1e-2])
+    plt.ylim([0, 0.15])
+    plt.yticks([0, 0.05, 0.1, 0.15])
 
-# plt.grid()
-# plt.savefig('../fig/fft_fcnet.pdf', bbox_inches='tight')
+    # plt.title('FFT of dx(t)')
+    plt.xlabel('frequency (1/epoch)')
+    plt.ylabel('amplitude')
+
+    plt.grid()
+    plt.savefig('../fig/fft_fcnet.pdf', bbox_inches='tight')
+
+def plot_ac():
+    d = th.load('/Users/pratik/Dropbox/iclr18data/traj/(Oct_12_01_41_39)_opt_{"s":42}_trajectory.pz_ac.pz')
+
+    plt.figure(2, figsize=(8,7))
+    plt.clf()
+
+    d['ac'] = d['ac'][~np.isnan(d['ac']).any(axis=1)]
+    sns.tsplot(time=d['lag'], data=d['ac'], color='k')
+
+    plt.xscale('log')
+    plt.xlim([1e3, 1e5])
+    plt.ylim([-0.2, 1])
+    plt.yticks([-0.2, 0.2, 0.6, 1.0])
+
+    # plt.title('Autocorrelation of x(t)')
+    plt.xlabel('lag (epochs)')
+    plt.ylabel('auto-correlation')
+
+    n = d['w'].shape[1]
+    ax = plt.gca()
+    z95 = 1.959963984540054
+    z99 = 2.5758293035489004
+    ax.axhline(y=z99 / np.sqrt(n), linestyle='--', color='r')
+    ax.axhline(y=z95 / np.sqrt(n), linestyle='--', color='r')
+    # ax.axhline(y=0.0, lw=2, linestyle='-', color='r')
+    ax.axhline(y=-z95 / np.sqrt(n), linestyle='--', color='r')
+    ax.axhline(y=-z99 / np.sqrt(n), linestyle='--', color='r')
+
+    plt.grid()
+    plt.savefig('../fig/ac_fcnet.pdf', bbox_inches='tight')
+
+
+def plot_grad():
+    d = th.load('/Users/pratik/Dropbox/iclr18data/traj/(Oct_12_01_41_39)_opt_{"s":42}_trajectory_extra.pz')
+
+    g = d['dw']
+    norm_g = np.linalg.norm(g, axis=0)/np.sqrt(g.shape[0])
+    norm_gi = np.abs(g)
+
+    n = g.shape[1]
+    idx = np.arange(0, n, n//1000)
+    norm_g, norm_gi = norm_g[idx], norm_gi[:,idx]
+
+    ng = pd.ewma(pd.DataFrame(norm_g), com=10).as_matrix().flatten()
+    ngi = pd.ewma(pd.DataFrame(norm_gi), com=1000).as_matrix()
+
+    plt.figure(3, figsize=(8,7))
+    plt.clf()
+
+    sns.tsplot(time=idx, data=ng, color='k') #, condition=r'g', legend=True)
+    # sns.tsplot(time=idx, data=ngi, color='k', condition=r'g^i', legend=True)
+
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.xlim([1e2, 1e5])
+    plt.ylim([1e-4, 1e-2])
+
+    plt.xlabel('epochs')
+    plt.ylabel(r'|grad f| / sqrt(d)')
+
+    plt.grid()
+    plt.savefig('../fig/fgrad_fcnet.pdf', bbox_inches='tight',rasterized=True)
+
+plot_fft()
+plot_ac()
+plot_grad()

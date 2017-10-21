@@ -133,6 +133,9 @@ try:
     for e in xrange(opt['B']):
         r, cc = train(e)
 
+        # fdw = full_grad()
+        # print fdw.norm()
+
         if e > opt['burnin']:
             fs.append(r['f'])
             top1s.append(r['top1'])
