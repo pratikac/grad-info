@@ -26,6 +26,7 @@ opt = add_args([
 ['--nc', 5, 'num classes'],
 ['--frac', 1.0, 'frac'],
 ['-B', 100000, 'max epochs'],
+['--burnin', 10, 'burnin epochs'],
 ['--lr', 0.1, 'lr'],
 ['--l2', 0.0, 'l2'],
 ['--lrs', '', 'lr schedule'],
@@ -96,7 +97,7 @@ def train(e):
         top1.add(yh.data, y.data)
         loss.add(f.data[0])
 
-        if e > 1000:
+        if e > opt['burnin']:
             ws.append(w.clonne().cpu())
             dws.append(dw.clone().cpu())
             mom = th.cat([optimizer.state[p]['momentum_buffer'].view(-1) for p in model.parameters()])
@@ -132,12 +133,12 @@ try:
     for e in xrange(opt['B']):
         r, cc = train(e)
 
-        if e > 1000:
+        if e > opt['burnin']:
             fs.append(r['f'])
             top1s.append(r['top1'])
-            ws.append(cc['w'])
-            dws.append(cc['dw'])
-            moms.append(cc['mom'])
+            ws.append(th.cat(cc['w']).view(-1,opt['np']))
+            dws.append(th.cat(cc['dw']).view(-1,opt['np']))
+            moms.append(th.cat(cc['mom']).view(-1,opt['np']))
 except KeyboardInterrupt:
     pass
 
