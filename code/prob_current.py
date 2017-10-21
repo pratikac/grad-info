@@ -54,7 +54,7 @@ if opt['g'] >= 0:
 optimizer = th.optim.SGD(model.parameters(), lr=opt['lr'],
             momentum=0.9, weight_decay=opt['l2'])
 
-build_filename(opt, blacklist=['i','augment','dataset','b','N','d','n'])
+build_filename(opt, blacklist=['i','augment','dataset','b','N','d','n','burnin', 'frac', 'nc'])
 pprint(opt)
 
 # dummy populate
@@ -98,7 +98,7 @@ def train(e):
         loss.add(f.data[0])
 
         if e > opt['burnin']:
-            ws.append(w.clonne().cpu())
+            ws.append(w.clone().cpu())
             dws.append(dw.clone().cpu())
             mom = th.cat([optimizer.state[p]['momentum_buffer'].view(-1) for p in model.parameters()])
             moms.append(mom.clone().cpu())
@@ -128,7 +128,7 @@ def full_grad():
     return dwc/float(opt['nb'])
 
 fs, top1s = [], []
-ws, dws, moms = [], [], []
+ws, dws, moms, full_dws = [], [], [], []
 try:
     for e in xrange(opt['B']):
         r, cc = train(e)
@@ -139,6 +139,7 @@ try:
             ws.append(th.cat(cc['w']).view(-1,opt['np']))
             dws.append(th.cat(cc['dw']).view(-1,opt['np']))
             moms.append(th.cat(cc['mom']).view(-1,opt['np']))
+            full_dws.append(full_grad())
 except KeyboardInterrupt:
     pass
 
@@ -147,7 +148,9 @@ if opt['l']:
     dirloc = opt.get('o')
 
     r = gitrev(opt)
-    th.save(dict(w=th.cat(ws).view(-1,opt['np']).t().numpy(), dw=th.cat(dws).view(-1,opt['np']).t().numpy(),
+    th.save(dict(w=th.cat(ws).view(-1,opt['np']).t().numpy(),
+                dw=th.cat(dws).view(-1,opt['np']).t().numpy(),
+                full_dw=th.cat(full_dws).view(-1,opt['np']).t().numpy(),
                 mom=th.cat(moms).view(-1,opt['np']).t().numpy(),
                 opt=opt,
                 meta=dict(SHA=r[0], STATUS=r[1], DIFF=r[2]),
