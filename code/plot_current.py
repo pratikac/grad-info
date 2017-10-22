@@ -161,28 +161,31 @@ def plot_ac():
 
 def plot_grad():
     d = th.load('/Users/pratik/Dropbox/iclr18data/traj/(Oct_12_01_41_39)_opt_{"s":42}_trajectory_extra.pz')
+    d2 = th.load('/Users/pratik/Dropbox/iclr18data/traj/(Oct_21_18_35_18)_opt_{"m":"fclenett","s":42}_trajectory.pz')
 
-    g = d['dw']
-    norm_g = np.linalg.norm(g, axis=0)/np.sqrt(g.shape[0])
-    norm_gi = np.abs(g)
+    g, g2 = d['dw'], d2['full_dw'][:,:175]
 
-    n = g.shape[1]
-    idx = np.arange(0, n, n//1000)
-    norm_g, norm_gi = norm_g[idx], norm_gi[:,idx]
+    norm_g1 = np.linalg.norm(g, axis=0)/np.sqrt(g.shape[0])
+    norm_g2 = np.linalg.norm(g2, axis=0)/np.sqrt(g2.shape[0])
+    norm_g = np.concatenate((norm_g2, norm_g1))
 
-    ng = pd.ewma(pd.DataFrame(norm_g), com=10).as_matrix().flatten()
-    ngi = pd.ewma(pd.DataFrame(norm_gi), com=1000).as_matrix()
+    ng = pd.ewma(pd.DataFrame(norm_g), com=100).as_matrix().flatten()
+
+    n = norm_g.shape[0]
+    idx = np.logspace(1, np.log10(n-1), 1000).astype(int)
 
     plt.figure(3, figsize=(8,7))
     plt.clf()
 
-    sns.tsplot(time=idx, data=ng, color='k') #, condition=r'g', legend=True)
-    # sns.tsplot(time=idx, data=ngi, color='k', condition=r'g^i', legend=True)
+    plt.plot(idx, ng[idx], 'k-')
 
-    plt.xscale('log')
-    plt.yscale('log')
-    plt.xlim([1e2, 1e5])
-    plt.ylim([1e-4, 1e-2])
+    plt.xscale('symlog')
+    plt.yscale('linear')
+    plt.xlim([10, 1e5])
+    plt.ylim([0.001, 0.003])
+
+    plt.xticks([10, 1e3, 1e5])
+    plt.yticks([1e-3, 2e-3, 3e-3])
 
     plt.xlabel('epochs')
     plt.ylabel(r'|grad f| / sqrt(d)')

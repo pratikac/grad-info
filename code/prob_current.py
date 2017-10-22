@@ -97,11 +97,11 @@ def train(e):
         top1.add(yh.data, y.data)
         loss.add(f.data[0])
 
-        if e > opt['burnin']:
-            ws.append(w.clone().cpu())
-            dws.append(dw.clone().cpu())
-            mom = th.cat([optimizer.state[p]['momentum_buffer'].view(-1) for p in model.parameters()])
-            moms.append(mom.clone().cpu())
+        # if e > opt['burnin']:
+        #     ws.append(w.clone().cpu())
+        #     dws.append(dw.clone().cpu())
+        #     mom = th.cat([optimizer.state[p]['momentum_buffer'].view(-1) for p in model.parameters()])
+        #     moms.append(mom.clone().cpu())
 
         if b > opt['nb']:
             break
@@ -133,15 +133,16 @@ try:
     for e in xrange(opt['B']):
         r, cc = train(e)
 
-        # fdw = full_grad()
-        # print fdw.norm()
-
         if e > opt['burnin']:
             fs.append(r['f'])
             top1s.append(r['top1'])
-            ws.append(th.cat(cc['w']).view(-1,opt['np']))
-            dws.append(th.cat(cc['dw']).view(-1,opt['np']))
-            moms.append(th.cat(cc['mom']).view(-1,opt['np']))
+            # ws.append(th.cat(cc['w']).view(-1,opt['np']))
+            # dws.append(th.cat(cc['dw']).view(-1,opt['np']))
+            # moms.append(th.cat(cc['mom']).view(-1,opt['np']))
+
+            ws.append(w.clone().cpu())
+            dws.append(dw.clone().cpu())
+            moms.append(w.clone().cpu()*0)
             full_dws.append(full_grad())
 except KeyboardInterrupt:
     pass
