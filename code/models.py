@@ -186,7 +186,13 @@ class cifarcnns(nn.Module):
         super(cifarcnns, self).__init__()
 
         if (not 'l2' in opt) or opt['l2'] < 0:
-            opt['l2'] = 1e-4
+            opt['l2'] = 1e-3
+
+        if (not 'd' in opt) or opt['d'] < 0:
+            if opt['augment']:
+                opt['d'] = 0.0
+            else:
+                opt['d'] = 0.25
 
         num_classes = get_num_classes(opt)
         bn1, bn2 = nn.BatchNorm1d, nn.BatchNorm2d

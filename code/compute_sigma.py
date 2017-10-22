@@ -102,14 +102,22 @@ def helper(f):
             print '[%d] %.2fs'%(b, timer()-_dt)
 
     S.div_(opt['nb'])
-    fn = f+'.S_augment_%s.pz'%(str(opt['augment']))
+
+    if opt['augment']:
+        fn = f+'.S_augment_%s.pz'%(str(opt['augment']))
+    else:
+        fn = f+'.S.pz'
     res = dict(opt=opt, S=S.cpu(), fgrad=fgrad.cpu())
     th.save(res, fn)
 
 def compute_stats(f):
-    fn = f+'.S.pz'
+    if opt['augment']:
+        fn = f+'.S_augment_%s.pz'%(str(opt['augment']))
+    else:
+        fn = f+'.S.pz'
+
     if not os.path.isfile(fn):
-        print 'File %s not found, runing helper()'%f+'.S.pz'
+        print 'File %s not found, runing helper()'%fn
         helper(f)
 
     d = th.load(fn)
