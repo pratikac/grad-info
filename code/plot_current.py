@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import os, sys, glob, pdb, argparse
+import os, sys, glob, pdb, argparse, random
 import cPickle as pickle
 import seaborn as sns
 import torch as th
@@ -190,6 +190,16 @@ def plot_grad():
     plt.grid()
     plt.savefig('../fig/fgrad_fcnet.pdf', bbox_inches='tight',rasterized=True)
 
-plot_fft()
-plot_ac()
-plot_grad()
+
+def plot_tsne():
+    from sklearn import (manifold, decomposition, discriminant_analysis)
+    d = th.load('/Users/pratik/Dropbox/iclr18data/traj/(Oct_12_01_41_39)_opt_{"s":42}_trajectory.pz_ac.pz')
+    w = d['w'].T
+    w = w[::1000,:]
+
+    tsne = manifold.TSNE(n_components=2, init='pca', random_state=42)
+    w2 = tsne.fit_transform(w)
+
+# plot_fft()
+# plot_ac()
+# plot_grad()
