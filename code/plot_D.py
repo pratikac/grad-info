@@ -149,6 +149,93 @@ def cifar10():
     if opt['s']:
         plt.savefig('../fig/allcnns_cifar10_D.pdf', bbox_inches='tight')
 
+def cifar10_augment():
+    loc = 'allcnns/(Sep_08_02_44_57)_opt_{"b":128,"dataset":"cifar10","m":"allcnns","s":42}/augment'
+    d = loaddir(os.path.join(opt['l'], loc), force=opt['f'])
+
+    plt.figure(2, figsize=(8,8))
+    plt.clf()
+
+    bins = np.logspace(-15, 2, 15)
+    idxs = [1,2,5]
+    for ii,di in enumerate(d):
+        if ii not in idxs:
+            continue
+
+        lw, ec = 2, 'w'
+        sns.distplot(d[ii]['eig'], bins=bins,
+            kde=False, color='k',
+            hist_kws=dict(alpha=alphas[ii], edgecolor=ec, linewidth=lw)
+            )
+
+        if alphas[ii] < 0.5:
+            lw, ec = 1, 'k'
+            sns.distplot(d[ii]['eig'], bins=bins,
+                kde=False, color='k',
+                hist_kws=dict(histtype='step', alpha=1, edgecolor=ec, linewidth=lw)
+                )
+
+    plt.xscale('log')
+    plt.yscale('log')
+
+    plt.xlim([1e-12, 1])
+    plt.ylim([0, 1e5])
+
+    plt.xticks(np.logspace(-12, 0, 4))
+    plt.yticks([1, 1e2, 1e4])
+
+    plt.grid()
+
+    plt.xlabel('eigenvalues')
+    plt.ylabel('frequency')
+
+    if opt['s']:
+        plt.savefig('../fig/allcnns_cifar10_augment_D.pdf', bbox_inches='tight')
+
+
+def cifarcnns():
+    loc = 'cifarcnns/(Oct_22_04_23_08)_opt_{"b":128,"d":0.25,"dataset":"cifar10","m":"cifarcnns","s":42}'
+    d = loaddir(os.path.join(opt['l'], loc), force=opt['f'])
+
+    plt.figure(2, figsize=(8,8))
+    plt.clf()
+
+    bins = np.logspace(-15, 2, 15)
+    idxs = [1,2,5]
+    for ii,di in enumerate(d):
+        if ii not in idxs:
+            continue
+
+        lw, ec = 2, 'w'
+        sns.distplot(d[ii]['eig'], bins=bins,
+            kde=False, color='k',
+            hist_kws=dict(alpha=alphas[ii], edgecolor=ec, linewidth=lw)
+            )
+
+        if alphas[ii] < 0.5:
+            lw, ec = 1, 'k'
+            sns.distplot(d[ii]['eig'], bins=bins,
+                kde=False, color='k',
+                hist_kws=dict(histtype='step', alpha=1, edgecolor=ec, linewidth=lw)
+                )
+
+    plt.xscale('log')
+    plt.yscale('log')
+
+    plt.xlim([1e-12, 1])
+    plt.ylim([0, 1e5])
+
+    plt.xticks(np.logspace(-12, 0, 4))
+    plt.yticks([1, 1e2, 1e4])
+
+    plt.grid()
+
+    plt.xlabel('eigenvalues')
+    plt.ylabel('frequency')
+
+    if opt['s']:
+        plt.savefig('../fig/cifarcnns_D.pdf', bbox_inches='tight')
+
 
 def cifar100():
     loc = 'allcnns/(Sep_08_02_45_19)_opt_{"b":128,"dataset":"cifar100","m":"allcnns","s":42}'
@@ -194,6 +281,9 @@ def cifar100():
         plt.savefig('../fig/allcnns_cifar100_D.pdf', bbox_inches='tight')
 
 
-lenets()
-cifar10()
-cifar100()
+# lenets()
+# cifar10()
+# cifar100()
+
+cifar10_augment()
+cifarcnns()

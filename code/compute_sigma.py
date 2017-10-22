@@ -77,7 +77,10 @@ def helper(f):
         grad.div_(len(_data))
         return grad
 
-    print 'S: ', f+'.S_augment_%s.pz'%(str(opt['augment']))
+    if opt['augment']:
+        print f+'.S_augment_%s.pz'%(str(opt['augment']))
+    else:
+        print f+'.S.pz'
 
     print '[computing full grad]'
     fgrad = full_grad()
