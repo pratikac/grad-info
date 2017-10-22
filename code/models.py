@@ -178,6 +178,43 @@ class lenetl(lenet):
         opt['d'] = 0.5
         super(lenetl, self).__init__(opt, c1, c2, c3)
 
+
+class cifarcnns(nn.Module):
+    name = 'cifarcnns'
+
+    def __init__(self, opt):
+        super(cifarcnns, self).__init__()
+
+        if (not 'l2' in opt) or opt['l2'] < 0:
+            opt['l2'] = 1e-4
+
+        num_classes = get_num_classes(opt)
+        bn1, bn2 = nn.BatchNorm1d, nn.BatchNorm2d
+
+        def convbn(ci,co,ksz,s=1,pz=0):
+            return nn.Sequential(
+                nn.Conv2d(ci,co,ksz,stride=s,padding=pz),
+                bn2(co),
+                nn.ReLU(True))
+
+        self.m = nn.Sequential(
+            convbn(3,16,5,1,2),
+            nn.MaxPool2d(2,2),
+            convbn(16,20,5,1,2),
+            nn.MaxPool2d(2,2),
+            convbn(20,20,5,1,2),
+            nn.MaxPool2d(2,2),
+            View(320),
+            nn.Linear(320, num_classes))
+
+        self.N = num_parameters(self.m)
+        s = '[%s] Num parameters: %d'%(self.name, self.N)
+        print(s)
+        logging.info(s)
+
+    def forward(self, x):
+        return self.m(x)
+
 class allcnn(nn.Module):
     name = 'allcnn'
 
@@ -207,7 +244,6 @@ class allcnn(nn.Module):
                 nn.ReLU(True)
                 )
         self.m = nn.Sequential(
-            nn.Dropout(0.2),
             convbn(3,c1,3,1,1),
             convbn(c1,c1,3,1,1),
             convbn(c1,c1,3,2,1),
