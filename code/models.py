@@ -13,7 +13,7 @@ from microbn import MicroBatchNorm2d, MicroBatchNorm1d
 
 def get_num_classes(opt):
     d = dict(mnist=10, svhn=10, cifar10=10,
-            cifar100=100, imagenet=1000)
+            cifar100=100, imagenet=1000, halfmnist=10)
     if not opt['dataset'] in d:
         assert False, 'Unknown dataset: %s'%opt['dataset']
     return d[opt['dataset']]
@@ -107,20 +107,20 @@ class lenet(nn.Module):
     def forward(self, x):
         return self.m(x)
 
-class fclenett(nn.Module):
-    name = 'fclenett'
-    def __init__(self, opt, c=16):
-        super(fclenett, self).__init__()
+class fclenet(nn.Module):
+    name = 'fclenet'
+    def __init__(self, opt, c=64):
+        super(fclenet, self).__init__()
 
         opt['l2'] = 0.
-        nc = opt.get('nc', 10)
+        nc = opt.get('nc', get_num_classes(opt))
 
         self.m = nn.Sequential(
             View(49),
             nn.Linear(49,c),
             nn.BatchNorm1d(c),
             nn.ReLU(True),
-            nn.Linear(c,opt['nc'])
+            nn.Linear(c, nc)
         )
 
         self.N = num_parameters(self.m)
@@ -130,6 +130,20 @@ class fclenett(nn.Module):
 
     def forward(self, x):
         return self.m(x)
+
+class fclenett(fclenet):
+    name = 'fclenett'
+    def __init__(self, opt, c=16):
+        opt['d'] = 0.0
+        opt['l2'] = 0
+        super(fclenett, self).__init__(opt, c)
+
+class fclenets(fclenet):
+    name = 'fclenets'
+    def __init__(self, opt, c=64):
+        opt['d'] = 0.0
+        opt['l2'] = 0
+        super(fclenets, self).__init__(opt, c)
 
 class lenett(nn.Module):
     name = 'lenett'
