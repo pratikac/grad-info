@@ -33,13 +33,13 @@ plt.rc('figure', titlesize=fsz)
 
 alphas = np.logspace(-1, -0.2, 6)
 
-# bins = np.logspace(-5, 2, 10)
-# xlim, ylim = [1e-5, 1e2], [0.1, 1e5]
-# xticks, yticks = [1e-5, 1e-1, 1e2], [1, 1e2, 1e4]
+bins = np.logspace(-5, 2, 10)
+xlim, ylim = [1e-5, 1e2], [0.1, 1e5]
+xticks, yticks = [1e-5, 1e-3, 1e-1, 1e1], [1, 1e2, 1e4]
 
-bins = np.logspace(-2, 2, 10)
-xlim, ylim = [1e-2, 1e2], [0.1, 1e5]
-xticks, yticks = [1e-2, 1, 1e2], [1, 1e2, 1e4]
+# bins = np.logspace(-2, 2, 10)
+# xlim, ylim = [1e-2, 1e2], [0.1, 1e5]
+# xticks, yticks = [1e-2, 1, 1e2], [1, 1e2, 1e4]
 
 
 def set_lim():
@@ -102,9 +102,10 @@ def rough(idx, loc, fname):
         e = pd.DataFrame(d[ii]['eig']).clip(lower=thresh)
         print ''
         print fname
-        print 'rank: ', d[ii]['rank'],
+        print 'rank: ', d[ii]['rank']
+        print 'thresh: ', thresh
         print e.describe()
-        # return
+        continue
 
         lw, ec = 2, 'w'
         sns.distplot(np.clip(d[ii]['eig'], a_min=thresh, a_max=None), bins=bins,
@@ -156,8 +157,8 @@ def cifar100():
 
 # lenets()
 # fclenets()
-# cifar10()
+cifar10()
 # cifar100()
 
 # cifar10_augment()
-convs()
+# convs()
