@@ -33,7 +33,7 @@ plt.rc('legend', fontsize=fsz)
 plt.rc('figure', titlesize=fsz)
 
 
-plt.figure(1, figsize=(7,7))
+fig = plt.figure(1, figsize=(7,7))
 plt.clf()
 
 d = 2
@@ -59,17 +59,19 @@ s1 = np.sqrt(u1**2 + v1**2) + 1e-6
 u1 /= s1
 v1 /= s1
 
-ax = plt.gcf()
-plt.streamplot(x,y,u,v, density=0.15, color='k', linewidth=7*s/s.max())
-plt.streamplot(x1,y1,u1,v1, start_points=[[-1,-1]], color='r', linewidth=7*s1/s1.max())
-plt.grid()
+ax = fig.add_subplot(111)
+plt.streamplot(x,y,u,v, density=0.15, color='k', linewidth=10*s/s.max())
+plt.streamplot(x1,y1,u1,v1, start_points=[[-1,-1]], color='r', linewidth=10*s1/s1.max())
+# plt.grid()
 plt.xlim([-2,2])
 plt.ylim([-2,2])
-plt.xticks([])
-plt.yticks([])
 # plt.xticks([-2,0,2])
 # plt.yticks([-2,0,2])
+
+ax.set_xticklabels([])
+ax.set_yticklabels([])
 plt.axes().set_aspect('equal')
 
-plt.contour(x, y, phi, levels=np.linspace(phi.min(), phi.max(), 6), cmap=cm.Blues, alpha=0.4)
+plt.contour(x, y, phi, levels=np.linspace(phi.min(), phi.max(), 6), cmap=cm.Blues, alpha=0.5, linewidth=1)
+# plt.contourf(x, y, phi, levels=np.linspace(phi.min(), phi.max(), 6), cmap=cm.Blues, alpha=0.1, linewidth=4)
 plt.savefig('../fig/j_accel.pdf', bbox_inches='tight')

@@ -58,13 +58,13 @@ def get_loaders(d, transforms, opt):
 
     if opt['frac'] > 1-1e-12:
         return [dict(train=trinff,val=tv,test=tv,train_full=trf,
-                idx=th.arange(0,d['train']['x'].size(0))) for i in xrange(opt['n'])]
+                idx=th.arange(0,d['train']['x'].size(0))) for i in range(opt['n'])]
     else:
         n = opt['n']
         N = d['train']['x'].size(0)
         tr = []
         idxs = []
-        for i in xrange(n):
+        for i in range(n):
             fs = (i / float(n)) % 1.0
             ns, ne = int(N*fs), int(N*(fs+opt['frac']))
             x, y = d['train']['x'], d['train']['y']
@@ -78,7 +78,7 @@ def get_loaders(d, transforms, opt):
                 xy = {  'x': th.cat((x[ns:], x[:ne])),
                         'y': th.cat((y[ns:], y[:ne]))}
             tr.append(get_inf_iterator(xy, transforms, opt['b'], nw=0, shuffle=True))
-        return [dict(train=tr[i],val=tv,test=tv,train_full=trf,idx=idxs[i]) for i in xrange(opt['n'])]
+        return [dict(train=tr[i],val=tv,test=tv,train_full=trf,idx=idxs[i]) for i in range(opt['n'])]
 
 def halfmnist(opt, sz=7, nc=2):
     loc = home + '/local2/pratikac/mnist'
@@ -99,14 +99,14 @@ def halfmnist(opt, sz=7, nc=2):
     txs, vxs = [], []
 
     _txs = d['train']['x']
-    for i in xrange(len(_txs)):
+    for i in range(len(_txs)):
         t = transforms.ToPILImage()(_txs[i])
         t = transforms.Scale(sz)(t)
         txs.append(transforms.ToTensor()(t).view(-1,1,sz,sz))
     d['train']['x'] = th.cat(txs)
 
     _vxs = d['val']['x']
-    for i in xrange(len(_vxs)):
+    for i in range(len(_vxs)):
         t = transforms.ToPILImage()(_vxs[i])
         t = transforms.Scale(sz)(t)
         vxs.append(transforms.ToTensor()(t).view(-1,1,sz,sz))
@@ -226,4 +226,4 @@ def imagenet(opt, only_train=False):
                 val=val_loader,
                 test=val_loader,
                 train_full=train_loader,
-                idx=ids) for i in xrange(opt['n'])]
+                idx=ids) for i in range(opt['n'])]
