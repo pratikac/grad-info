@@ -72,6 +72,7 @@ class lenet(nn.Module):
     def __init__(self, opt, c1=20, c2=50, c3=500, microbn=False):
         super(lenet, self).__init__()
 
+        opt['d'] = opt.get('d', -1.0)
         if opt['d'] < 0:
             opt['d'] = 0.25
         opt['l2'] = 0.
@@ -191,7 +192,6 @@ class lenetl(lenet):
     def __init__(self, opt, c1=40, c2=100, c3=1000):
         opt['d'] = 0.5
         super(lenetl, self).__init__(opt, c1, c2, c3)
-
 
 class cifarcnns(nn.Module):
     name = 'cifarcnns'
