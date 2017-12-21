@@ -39,7 +39,7 @@ assert isinstance(opt['L'], int), 'opt[b] // 128=%f is not int'%opt['L']
 
 model = getattr(models, opt['m'])(opt).cuda()
 if opt['g'] >= th.cuda.device_count():
-    print '[Using DataParallel]'
+    print('[Using DataParallel]')
     model = nn.DataParallel(model).cuda()
 criterion = nn.CrossEntropyLoss().cuda()
 
@@ -99,17 +99,17 @@ def train(e):
     dt = timer()
     for b, (x,y) in enumerate(train_data):
         _dt = timer()
-        if e < 5:
+        if e < 0:
             step(x,y,L=1)
         else:
             step(x,y,L=opt['L'])
 
-        if b % 50 == 0 and b > 0:
-            print '[%03d][%03d/%03d] %.3f %.3f%% [%.3fs]'%(e, b, opt['nb'], \
-                    loss.value()[0], top1.value()[0], timer()-_dt)
-
+        if (b % 50 == 0) and b > 0:
+            print('[%03d][%03d/%03d] %.3f %.3f%% [%.3fs]'%(e, b, opt['nb'], \
+                    loss.value()[0], top1.value()[0], timer()-_dt))
+    
     r = dict(e=e, f=loss.value()[0], top1=top1.value()[0], train=True)
-    print '+[%02d] %.3f %.3f%% [%.3fs]'%(e, r['f'], r['top1'], timer()-dt)
+    print('+[%02d] %.3f %.3f%% [%.3fs]'%(e, r['f'], r['top1'], timer()-dt))
     return r
 
 def validate(e):
@@ -131,7 +131,7 @@ def validate(e):
         loss.add(f.data[0])
 
     r = dict(e=e, f=loss.value()[0], top1=top1.value()[0], val=True)
-    print '*[%02d] %.3f %.3f%%'%(e, r['f'], r['top1'])
+    print('*[%02d] %.3f %.3f%%'%(e, r['f'], r['top1']))
     return r
 
 def save_ckpt(e, stats):
@@ -156,7 +156,7 @@ def save_ckpt(e, stats):
 
 # main
 tmm, vmm = None, None
-for e in xrange(opt['B']):
+for e in range(opt['B']):
     tmm = train(e)
     vmm = validate(e)
 
@@ -164,7 +164,7 @@ for e in xrange(opt['B']):
     #     vmm = validate(e)
     #     save_ckpt(e, dict(train=tmm, val=vmm))
 
-    print ''
+    print()
 
 # save on the last one
 vmm = validate(opt['B'])

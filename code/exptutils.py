@@ -145,7 +145,7 @@ def setup(opt):
     t = 4
     s = opt.get('s', 42)
     ngpus = th.cuda.device_count()
-    gpus = [i if opt['g'] >= ngpus else opt['g'] for i in xrange(ngpus)]
+    gpus = [i if opt['g'] >= ngpus else opt['g'] for i in range(ngpus)]
     if 'gpus' in opt and (not opt['gpus'] == ''):
         gpus = json.loads(opt['gpus'])
 
@@ -190,7 +190,7 @@ def schedule(opt, e, logger=None, k='lr'):
     rs = json.loads(opt[ks])
 
     idx = len(rs)-1
-    for i in xrange(len(rs)):
+    for i in range(len(rs)):
         if e < rs[i][0]:
             idx = i
             break

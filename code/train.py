@@ -72,11 +72,11 @@ def train(e):
         loss.add(f.data[0])
 
         if b % 100 == 0 and b > 0:
-            print '[%03d][%03d/%03d] %.3f %.3f%% [%.3fs]'%(e, b, opt['nb'], \
-                    loss.value()[0], top1.value()[0], timer()-dt)
+            print( '[%03d][%03d/%03d] %.3f %.3f%% [%.3fs]'%(e, b, opt['nb'], \
+                    loss.value()[0], top1.value()[0], timer()-dt))
 
     r = dict(e=e, f=loss.value()[0], top1=top1.value()[0], train=True)
-    print '+[%02d] %.3f %.3f%%'%(e, r['f'], r['top1'])
+    print('+[%02d] %.3f %.3f%%'%(e, r['f'], r['top1']))
     return r
 
 def validate(e):
@@ -97,7 +97,7 @@ def validate(e):
         loss.add(f.data[0])
 
     r = dict(e=e, f=loss.value()[0], top1=top1.value()[0], val=True)
-    print '*[%02d] %.3f %.3f%%'%(e, r['f'], r['top1'])
+    print('*[%02d] %.3f %.3f%%'%(e, r['f'], r['top1']))
     return r
 
 def save_ckpt(e, stats):
@@ -122,14 +122,14 @@ def save_ckpt(e, stats):
 
 # main
 tmm, vmm = None, None
-for e in xrange(opt['B']):
+for e in range(opt['B']):
     tmm = train(e)
 
     if e % (opt['B'] // opt['L']) == 0:
         vmm = validate(e)
         save_ckpt(e, dict(train=tmm, val=vmm))
 
-    print ''
+    print()
 
 # save on the last one
 vmm = validate(opt['B'])
