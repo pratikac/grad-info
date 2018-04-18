@@ -159,7 +159,7 @@ def setup(opt):
     if len(np.unique(gpus)) == 1:
         th.cuda.set_device(gpus[0])
 
-def dry_feed(m, loader, mid=0, opt=None):
+def dry_feed(m, loader, opt=None):
     def set_dropout(cache = None, p=0):
         if cache is None:
             cache = []
@@ -177,7 +177,7 @@ def dry_feed(m, loader, mid=0, opt=None):
     m.train()
     cache = set_dropout()
     for bi, (x,y) in enumerate(loader):
-        x =   Variable(x.cuda(mid), volatile=True)
+        x =   Variable(x.cuda(), volatile=True)
         yh = m(x)
     set_dropout(cache)
     m.eval()
