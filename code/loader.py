@@ -144,6 +144,7 @@ def cifar_helper(opt, s):
         cv.RandomHorizontalFlip(),
         cv.Pad(4, 2),
         cv.RandomCrop(sz),
+        cv.CutOut(14, (0,0,0)),
         lambda x: x.transpose(2,0,1),
         th.from_numpy
         ])
@@ -187,6 +188,7 @@ def svhn(opt):
         cv.RandomHorizontalFlip(),
         cv.Pad(4, 2),
         cv.RandomCrop(sz),
+        cv.CutOut(14, (0,0,0)),
         lambda x: x.transpose(2,0,1),
         th.from_numpy
         ])

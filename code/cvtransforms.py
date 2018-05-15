@@ -158,3 +158,28 @@ class RandomSizedCrop(object):
         crop = CenterCrop(self.size)
         return crop(scale(img))
 
+class CutOut(object):
+    """Cutout (size, size)
+    """
+    def __init__(self, size, value):
+        if isinstance(size, numbers.Number):
+            self.size = (int(size), int(size))
+        else:
+            self.size = size
+
+        self.value = value
+
+    def __call__(self, img):
+        w, h = img.shape[1], img.shape[0]
+        th, tw = self.size
+        if w == tw and h == th:
+            return img
+
+        x1 = random.randint(0, w - tw)
+        y1 = random.randint(0, h - th)
+
+        for i,v in enumerate(self.value):
+            img[y1:y1+th, x1:x1+tw, i] = v
+
+        return img
+
