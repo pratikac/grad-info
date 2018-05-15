@@ -25,6 +25,7 @@ opt = add_args([
 ['--augment', False, 'data augmentation'],
 ['-B', 5, 'max epochs'],
 ['--lr', 0.1, 'lr'],
+['--l2', -1.0, 'l2'],
 ['--lrs', '', 'lr schedule'],
 ['-L', 5, 'number of ckpts'],
 ['-s', 42, 'seed'],
