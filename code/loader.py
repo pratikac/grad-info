@@ -1,6 +1,5 @@
 import torch as th
-import torchvision.cvtransforms as T
-import torchvision.transforms as transforms
+import torchvision.transforms as T
 from torchvision import datasets
 import torchnet as tnt
 import torch.utils.data
@@ -8,7 +7,6 @@ import torchnet as tnt
 
 import numpy as np
 import os, sys, pdb, math, random
-import cv2
 import scipy.io as sio
 
 home = '/home/'+os.environ['USER']
@@ -100,16 +98,16 @@ def halfmnist(opt, sz=7, nc=2):
 
     _txs = d['train']['x']
     for i in range(len(_txs)):
-        t = transforms.ToPILImage()(_txs[i])
-        t = transforms.Scale(sz)(t)
-        txs.append(transforms.ToTensor()(t).view(-1,1,sz,sz))
+        t = T.ToPILImage()(_txs[i])
+        t = T.Scale(sz)(t)
+        txs.append(T.ToTensor()(t).view(-1,1,sz,sz))
     d['train']['x'] = th.cat(txs)
 
     _vxs = d['val']['x']
     for i in range(len(_vxs)):
-        t = transforms.ToPILImage()(_vxs[i])
-        t = transforms.Scale(sz)(t)
-        vxs.append(transforms.ToTensor()(t).view(-1,1,sz,sz))
+        t = T.ToPILImage()(_vxs[i])
+        t = T.Scale(sz)(t)
+        vxs.append(T.ToTensor()(t).view(-1,1,sz,sz))
     d['val']['x'] = th.cat(vxs)
 
     return d, lambda x: x
@@ -139,13 +137,12 @@ def cifar_helper(opt, s):
 
     sz = d['train']['x'].size(3)
     augment = tnt.transform.compose([
-        lambda x: x.numpy().astype(np.float32),
-        lambda x: x.transpose(1,2,0),
+        T.ToPILImage(),
         T.RandomHorizontalFlip(),
         T.Pad(4, 2),
         T.RandomCrop(sz),
-        lambda x: x.transpose(2,0,1),
-        th.from_numpy])
+        T.ToTensor()
+        ])
 
     return d, augment
 
@@ -181,13 +178,12 @@ def svhn(opt):
 
     sz = d['train']['x'].size(3)
     augment = tnt.transform.compose([
-        lambda x: x.numpy().astype(np.float32),
-        lambda x: x.transpose(1,2,0),
+        T.ToPILImage(),
         T.RandomHorizontalFlip(),
         T.Pad(4, 2),
         T.RandomCrop(sz),
-        lambda x: x.transpose(2,0,1),
-        th.from_numpy])
+        T.ToTensor(),
+        ])
 
     return d, lambda x: x
 
@@ -200,14 +196,13 @@ def imagenet(opt, only_train=False):
 
     input_transform = [transforms.Scale(256)]
 
-    normalize = [transforms.ToTensor(),
-                transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                     std=[0.229, 0.224, 0.225])]
-
+    normalize = [T.ToTensor(),
+                T.Normalize(mean=[0.485, 0.456, 0.406],
+                            std=[0.229, 0.224, 0.225])]
 
     train_folder = datasets.ImageFolder(traindir, transforms.Compose([
-            transforms.RandomSizedCrop(224),
-            transforms.RandomHorizontalFlip()] + normalize))
+            T.RandomSizedCrop(224),
+            T.RandomHorizontalFlip()] + normalize))
     train_loader = th.utils.data.DataLoader(
         train_folder,
         batch_size=bsz, shuffle=True,

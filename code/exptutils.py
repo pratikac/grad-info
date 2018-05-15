@@ -176,9 +176,10 @@ def dry_feed(m, loader, opt=None):
 
     m.train()
     cache = set_dropout()
-    for bi, (x,y) in enumerate(loader):
-        x =   Variable(x.cuda(), volatile=True)
-        yh = m(x)
+    with th.no_grad():
+        for bi, (x,y) in enumerate(loader):
+            x =   Variable(x.cuda())
+            yh = m(x)
     set_dropout(cache)
     m.eval()
 
