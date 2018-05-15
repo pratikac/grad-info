@@ -91,7 +91,6 @@ def validate(e):
         for b, (x,y) in enumerate(val_data):
             x,y = Variable(x.cuda()), Variable(y.cuda())
 
-            model.zero_grad()
             yh = model(x)
             f = criterion(yh, y)
 
