@@ -1,5 +1,6 @@
 import torch as th
 import torchvision.transforms as T
+import cvtransforms as cv
 from torchvision import datasets
 import torchnet as tnt
 import torch.utils.data
@@ -7,6 +8,7 @@ import torchnet as tnt
 
 import numpy as np
 import os, sys, pdb, math, random
+import cv2
 import scipy.io as sio
 
 home = '/home/'+os.environ['USER']
@@ -137,11 +139,13 @@ def cifar_helper(opt, s):
 
     sz = d['train']['x'].size(3)
     augment = tnt.transform.compose([
-        T.ToPILImage(),
-        T.RandomHorizontalFlip(),
-        T.Pad(4, 2),
-        T.RandomCrop(sz),
-        T.ToTensor()
+        lambda x: x.numpy().astype(np.float32),
+        lambda x: x.transpose(1,2,0),
+        cv.RandomHorizontalFlip(),
+        cv.Pad(4, 2),
+        cv.RandomCrop(sz),
+        lambda x: x.transpose(2,0,1),
+        th.from_numpy
         ])
 
     return d, augment
@@ -178,11 +182,13 @@ def svhn(opt):
 
     sz = d['train']['x'].size(3)
     augment = tnt.transform.compose([
-        T.ToPILImage(),
-        T.RandomHorizontalFlip(),
-        T.Pad(4, 2),
-        T.RandomCrop(sz),
-        T.ToTensor(),
+        lambda x: x.numpy().astype(np.float32),
+        lambda x: x.transpose(1,2,0),
+        cv.RandomHorizontalFlip(),
+        cv.Pad(4, 2),
+        cv.RandomCrop(sz),
+        lambda x: x.transpose(2,0,1),
+        th.from_numpy
         ])
 
     return d, lambda x: x
