@@ -36,6 +36,8 @@ opt = add_args([
 setup(opt)
 
 model = getattr(models, opt['m'])(opt).cuda()
+if opt['g'] >= th.cuda.device_count():
+    model = nn.DataParallel(model)
 criterion = nn.CrossEntropyLoss().cuda()
 
 build_filename(opt, blacklist=['i', 'check', 'L'])
