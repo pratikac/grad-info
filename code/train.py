@@ -45,7 +45,7 @@ loaders = loader.get_loaders(dataset, augment, opt)
 train_data, val_data = loaders[0]['train_full'], loaders[0]['val']
 
 optimizer = th.optim.SGD(model.parameters(), lr=opt['lr'],
-            momentum=0.0, weight_decay=opt['l2'])
+            momentum=0.9, weight_decay=opt['l2'])
 
 def train(e):
     opt['lr'] = lrschedule(opt, e)
