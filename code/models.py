@@ -346,7 +346,7 @@ class wideresnet(nn.Module):
 
     @staticmethod
     def netblock(nl, ci, co, blk, s, p=0.):
-        ls = [blk(i==0 and ci or co, co, i==0 and s or 1, p) for i in xrange(nl)]
+        ls = [blk((i==0 and ci or co), co, (i==0 and s or 1), p) for i in range(nl)]
         return nn.Sequential(*ls)
 
     def __init__(self, opt):
@@ -363,7 +363,7 @@ class wideresnet(nn.Module):
 
         nc = [16, 16*widen, 32*widen, 64*widen]
         assert (depth-4)%6 == 0, 'Incorrect depth'
-        n = (depth-4)/6
+        n = (depth-4)//6
 
         self.m = nn.Sequential(
                 nn.Conv2d(3, nc[0], kernel_size=3, stride=1, padding=1, bias=False),
@@ -628,14 +628,14 @@ class densenet(nn.Module):
             nblk //= 2
 
         ncis, ncos = [2*gr], [2*gr]
-        for i in xrange(1,4):
+        for i in range(1,4):
             nc = ncos[-1] + nblk*gr
             ncis.append(nc)
             ncos.append(int(math.floor(nc*reduction)))
 
         def denseblock(nc, gr, nblk, blk, p):
             wl = self.bottleneck if is_bottleneck else self.basic
-            ls = [wl(nc + i*gr, gr, p) for i in xrange(nblk)]
+            ls = [wl(nc + i*gr, gr, p) for i in range(nblk)]
             return nn.Sequential(*ls)
 
         self.m = nn.Sequential(

@@ -25,6 +25,7 @@ opt = add_args([
 ['--augment', False, 'data augmentation'],
 ['-B', 5, 'max epochs'],
 ['--lr', 0.1, 'lr'],
+['--l2', -1.0, 'l2'],
 ['--lrs', '', 'lr schedule'],
 ['-L', 5, 'number of ckpts'],
 ['-s', 42, 'seed'],
@@ -35,6 +36,8 @@ opt = add_args([
 setup(opt)
 
 model = getattr(models, opt['m'])(opt).cuda()
+if opt['g'] >= th.cuda.device_count():
+    model = nn.DataParallel(model)
 criterion = nn.CrossEntropyLoss().cuda()
 
 build_filename(opt, blacklist=['i', 'check', 'L'])
@@ -69,7 +72,7 @@ def train(e):
         optimizer.step()
 
         top1.add(yh.data, y.data)
-        loss.add(f.data[0])
+        loss.add(f.item())
 
         if b % 100 == 0 and b > 0:
             print( '[%03d][%03d/%03d] %.3f %.3f%% [%.3fs]'%(e, b, opt['nb'], \
@@ -87,15 +90,15 @@ def validate(e):
     top1 = tnt.meter.ClassErrorMeter()
 
     nb = len(val_data)
-    for b, (x,y) in enumerate(val_data):
-        x,y = Variable(x.cuda(), volatile=True), Variable(y.cuda(), volatile=True)
+    with th.no_grad():
+        for b, (x,y) in enumerate(val_data):
+            x,y = Variable(x.cuda()), Variable(y.cuda())
 
-        model.zero_grad()
-        yh = model(x)
-        f = criterion(yh, y)
+            yh = model(x)
+            f = criterion(yh, y)
 
-        top1.add(yh.data, y.data)
-        loss.add(f.data[0])
+            top1.add(yh.data, y.data)
+            loss.add(f.item())
 
     r = dict(e=e, f=loss.value()[0], top1=top1.value()[0], val=True)
     print('*[%02d] %.3f %.3f%%'%(e, r['f'], r['top1']))
