@@ -125,11 +125,14 @@ def mnist(opt):
     return d, lambda x: x
 
 def cifar_helper(opt, s):
-    loc = home + '/local2/pratikac/cifar/'
-    
-    csz = 16 if opt['dataset'] == 'cifar10' else 8
-    cutout = cv.CutOut(csz, (0,0,0))
-    
+    if 'cifar' in s:
+        loc = home + '/local2/pratikac/cifar/'
+    elif 'imagenet32' in s:
+        loc = home + '/local2/pratikac/imagenet32/'
+
+    # csz = 16 if opt['dataset'] == 'cifar10' else 8
+    # cutout = cv.CutOut(csz, (0,0,0))
+
     if 'resnet' in opt['m'] or 'densenet' in opt['m']:
         d1 = np.load(loc+s+'-train.npz')
         d2 = np.load(loc+s+'-test.npz')
@@ -148,7 +151,7 @@ def cifar_helper(opt, s):
         cv.RandomHorizontalFlip(),
         cv.Pad(4, 2),
         cv.RandomCrop(sz),
-        cutout,
+        # cutout,
         lambda x: x.transpose(2,0,1),
         th.from_numpy
         ])
@@ -160,6 +163,9 @@ def cifar10(opt):
 
 def cifar100(opt):
     return cifar_helper(opt, 'cifar100')
+
+def imagenet32(opt):
+    return cifar_helper(opt, 'imagenet32')
 
 def svhn(opt):
     loc = home + '/local2/pratikac/svhn/'

@@ -57,7 +57,7 @@ for i in xrange(N):
     D.add_(1.0/float(N), th.ger(fdw,fdw))
 
     if i % 100 == 0:
-        print i
+        print(i)
 
 D = D.numpy()
 print 'rank: %f%%'%(np.linalg.matrix_rank(D)/float(n)*100)
