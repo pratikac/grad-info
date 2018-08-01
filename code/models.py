@@ -13,7 +13,7 @@ from microbn import MicroBatchNorm2d, MicroBatchNorm1d
 
 def get_num_classes(opt):
     d = dict(mnist=10, svhn=10, cifar10=10,
-            cifar100=100, imagenet=1000, halfmnist=10)
+            cifar100=100, imagenet=1000, imagenet32=1000, halfmnist=10)
     if not opt['dataset'] in d:
         assert False, 'Unknown dataset: %s'%opt['dataset']
     return d[opt['dataset']]

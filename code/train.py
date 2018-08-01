@@ -18,7 +18,7 @@ from copy import deepcopy
 opt = add_args([
 ['-o', '/home/%s/local2/pratikac/results'%os.environ['USER'], 'output'],
 ['-m', 'allcnnt', 'lenet | mnistfc | allcnn | wrn* | resnet*'],
-['-g', 0, 'gpu'],
+['-g', 3, 'gpu'],
 ['--dataset', 'cifar10', 'mnist | cifar10 | cifar100 | svhn | imagenet'],
 ['-d', -1.0, 'dropout'],
 ['-b', 128, 'batch_size'],

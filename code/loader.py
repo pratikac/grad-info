@@ -130,10 +130,10 @@ def cifar_helper(opt, s):
     elif 'imagenet32' in s:
         loc = home + '/local2/pratikac/imagenet32/'
 
-    # csz = 16 if opt['dataset'] == 'cifar10' else 8
-    # cutout = cv.CutOut(csz, (0,0,0))
+    csz = 8
+    cutout = cv.CutOut(csz, (0,0,0))
 
-    if 'resnet' in opt['m'] or 'densenet' in opt['m']:
+    if 'resnet' in opt['m'] or 'densenet' in opt['m'] or 'imagenet32' in opt['dataset']:
         d1 = np.load(loc+s+'-train.npz')
         d2 = np.load(loc+s+'-test.npz')
     else:
