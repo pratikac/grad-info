@@ -98,9 +98,8 @@ def proc_imagenet32(loc):
 
     tx, vx = normalize(tx), normalize(vx)
     txf, vxf = tx.reshape(tx.shape[0], -1).T, vx.reshape(vx.shape[0], -1).T
-    np.savez(os.path.join(proc_loc, 'imagenet32-train.npz'), data=tx, labels=ty)
-    np.savez(os.path.join(proc_loc, 'imagenet32-test.npz'), data=vx, labels=vy)
-    sys.exit(0)
+    #np.savez(os.path.join(proc_loc, 'imagenet32-train.npz'), data=tx, labels=ty)
+    #np.savez(os.path.join(proc_loc, 'imagenet32-test.npz'), data=vx, labels=vy)
 
     print('[Whitening]')
     pca = PCA(D=txf, n_components=txf.shape[1])
